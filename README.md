@@ -412,8 +412,8 @@ docker compose up -d --build
 ### 3) Verify
 
 ```bash
-docker ps --filter name=claw-empire
-docker logs -f claw-empire
+docker ps --filter name=agent-coworking-space
+docker logs -f agent-coworking-space
 ```
 
 Open: `http://127.0.0.1:8790`
@@ -423,8 +423,8 @@ Open: `http://127.0.0.1:8790`
 ```bash
 # requires token with package write scope
 echo "<GITHUB_TOKEN_WITH_PACKAGES_WRITE>" | docker login ghcr.io -u <github-user> --password-stdin
-docker tag claw-empire-claw-empire:latest ghcr.io/<github-user>/claw-empire:latest
-docker push ghcr.io/<github-user>/claw-empire:latest
+docker tag agent-coworking-space-agent-coworking-space:latest ghcr.io/<github-user>/agent-coworking-space:latest
+docker push ghcr.io/<github-user>/agent-coworking-space:latest
 ```
 
 ### Prerequisites
@@ -621,7 +621,7 @@ Without meeting:
 curl -X POST http://127.0.0.1:8790/api/inbox \
   -H "content-type: application/json" \
   -H "x-inbox-secret: $INBOX_WEBHOOK_SECRET" \
-  -d '{"source":"telegram","author":"ceo","text":"$Hotfix production login bug immediately","skipPlannedMeeting":true,"project_context":"existing climpire project"}'
+  -d '{"source":"telegram","author":"ceo","text":"$Hotfix production login bug immediately","skipPlannedMeeting":true,"project_context":"existing Agent Coworking Space project"}'
 ```
 
 ---
@@ -639,7 +639,7 @@ Copy `.env.example` to `.env`. All secrets stay local — never commit `.env`.
 | `API_AUTH_TOKEN`                       | Recommended              | Bearer token for non-loopback API/WebSocket access                                                                                           |
 | `INBOX_WEBHOOK_SECRET`                 | **Yes for `/api/inbox`** | Shared secret required in `x-inbox-secret` header                                                                                            |
 | `OPENCLAW_CONFIG`                      | Recommended for OpenClaw | Absolute path to `openclaw.json` used for gateway target discovery/chat relay                                                                |
-| `DB_PATH`                              | No                       | SQLite database path (default: `./claw-empire.sqlite`)                                                                                       |
+| `DB_PATH`                              | No                       | SQLite database path (default: `./agent-coworking-space.sqlite`)                                                                             |
 | `LOGS_DIR`                             | No                       | Log directory (default: `./logs`)                                                                                                            |
 | `OAUTH_GITHUB_CLIENT_ID`               | No                       | GitHub OAuth App client ID                                                                                                                   |
 | `OAUTH_GITHUB_CLIENT_SECRET`           | No                       | GitHub OAuth App client secret                                                                                                               |
@@ -824,10 +824,7 @@ Skills learn/unlearn automation is currently designed for CLI-capable providers.
 ## Project Structure
 
 ```
-claw-empire/
-├── .github/
-│   └── workflows/
-│       └── ci.yml             # PR CI (Unicode guard, format, lint, tests)
+agent-coworking-space/
 ├── server/
 │   ├── index.ts              # backend entrypoint
 │   ├── server-main.ts        # runtime wiring/bootstrap

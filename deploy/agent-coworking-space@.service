@@ -1,0 +1,25 @@
+[Unit]
+Description=Agent Coworking Space service
+Documentation=https://github.com/GlennAyden/agent-coworking-space
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=%i
+WorkingDirectory=%h/agent-coworking-space
+EnvironmentFile=-%h/agent-coworking-space/deploy/.env.production
+ExecStartPre=/usr/bin/env bash -lc 'mkdir -p %h/agent-coworking-space/logs'
+ExecStart=/usr/bin/env bash -lc 'cd %h/agent-coworking-space && pnpm run start'
+Restart=on-failure
+RestartSec=10
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+StandardOutput=append:%h/agent-coworking-space/logs/agent-coworking-space.log
+StandardError=append:%h/agent-coworking-space/logs/agent-coworking-space.err
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

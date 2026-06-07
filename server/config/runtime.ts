@@ -100,6 +100,7 @@ function resolveDefaultDataRoot(): string {
 }
 
 export const DEFAULT_DATA_ROOT = resolveDefaultDataRoot();
-export const DEFAULT_DB_PATH = path.join(DEFAULT_DATA_ROOT, "claw-empire.sqlite");
+export const DEFAULT_DB_PATH = path.join(DEFAULT_DATA_ROOT, "agent-coworking-space.sqlite");
 export const DEFAULT_LOGS_DIR = path.join(DEFAULT_DATA_ROOT, "logs");
-export const LEGACY_DB_PATH = path.join(process.cwd(), "climpire.sqlite");
+export const LEGACY_CLAW_EMPIRE_DB_PATH = path.join(DEFAULT_DATA_ROOT, "claw-empire.sqlite");
+export const LEGACY_CLIMPIRE_DB_PATH = path.join(process.cwd(), "climpire.sqlite");

@@ -1,12 +1,12 @@
-# Claw-Empire Deployment Guide
+# Agent Coworking Space Deployment Guide
 
 This directory contains production deployment examples for a single-host Linux setup.
 
 Included files:
 
 - `deploy/.env.production.template`: runtime environment template
-- `deploy/claw-empire@.service`: example user-level systemd service
-- `deploy/nginx/claw-empire.conf`: example nginx reverse proxy
+- `deploy/agent-coworking-space@.service`: example user-level systemd service
+- `deploy/nginx/agent-coworking-space.conf`: example nginx reverse proxy
 
 ## Assumptions
 
@@ -18,8 +18,8 @@ Included files:
 ## 1. Build the app
 
 ```bash
-git clone https://github.com/GreenSheep01201/claw-empire.git
-cd claw-empire
+git clone https://github.com/GlennAyden/agent-coworking-space.git
+cd agent-coworking-space
 pnpm install
 pnpm run build
 ```
@@ -48,9 +48,9 @@ If you expose the Node server directly on a LAN or VPN, set `HOST=0.0.0.0` and r
 
 ```bash
 mkdir -p ~/.config/systemd/user
-cp deploy/claw-empire@.service ~/.config/systemd/user/claw-empire.service
+cp deploy/agent-coworking-space@.service ~/.config/systemd/user/agent-coworking-space.service
 systemctl --user daemon-reload
-systemctl --user enable --now claw-empire
+systemctl --user enable --now agent-coworking-space
 ```
 
 If you want the service to survive logout:
@@ -62,15 +62,15 @@ sudo loginctl enable-linger "$USER"
 Useful commands:
 
 ```bash
-systemctl --user status claw-empire
-journalctl --user -u claw-empire -f
+systemctl --user status agent-coworking-space
+journalctl --user -u agent-coworking-space -f
 ```
 
 ## 4. Optional nginx reverse proxy
 
 ```bash
-sudo cp deploy/nginx/claw-empire.conf /etc/nginx/sites-available/claw-empire
-sudo ln -s /etc/nginx/sites-available/claw-empire /etc/nginx/sites-enabled/claw-empire
+sudo cp deploy/nginx/agent-coworking-space.conf /etc/nginx/sites-available/agent-coworking-space
+sudo ln -s /etc/nginx/sites-available/agent-coworking-space /etc/nginx/sites-enabled/agent-coworking-space
 sudo nginx -t
 sudo systemctl reload nginx
 ```
@@ -88,7 +88,7 @@ curl http://127.0.0.1:8790/api/health
 Authenticated remote check:
 
 ```bash
-curl -H "Authorization: Bearer YOUR_API_AUTH_TOKEN" https://claw.example.com/api/health
+curl -H "Authorization: Bearer YOUR_API_AUTH_TOKEN" https://agent.example.com/api/health
 ```
 
 ## 6. Updating
@@ -97,7 +97,7 @@ curl -H "Authorization: Bearer YOUR_API_AUTH_TOKEN" https://claw.example.com/api
 git pull
 pnpm install
 pnpm run build
-systemctl --user restart claw-empire
+systemctl --user restart agent-coworking-space
 ```
 
 ## Notes

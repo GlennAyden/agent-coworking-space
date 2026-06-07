@@ -116,7 +116,7 @@ const RESPONSE_EXAMPLE_OVERRIDES = {
   "GET /api/openapi.json 200": {
     openapi: "3.0.3",
     info: {
-      title: "Claw-Empire API",
+      title: "Agent Coworking Space API",
     },
   },
 };

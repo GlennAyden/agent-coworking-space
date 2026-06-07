@@ -58,4 +58,24 @@ describe("db runtime", () => {
 
     initialized.db.close();
   });
+
+  it("migrates the legacy Claw-Empire database filename to the Agent Coworking Space default", async () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "agent-coworking-space-runtime-test-"));
+    const legacyDbPath = path.join(tmpDir, "claw-empire.sqlite");
+    const defaultDbPath = path.join(tmpDir, "agent-coworking-space.sqlite");
+    fs.writeFileSync(legacyDbPath, "");
+
+    delete process.env.DB_PATH;
+    delete process.env.LOGS_DIR;
+    process.env.APP_DATA_DIR = tmpDir;
+
+    const runtime = await importRuntimeModule();
+    const initialized = runtime.initializeDatabaseRuntime();
+
+    expect(initialized.dbPath).toBe(defaultDbPath);
+    expect(fs.existsSync(legacyDbPath)).toBe(false);
+    expect(fs.existsSync(defaultDbPath)).toBe(true);
+
+    initialized.db.close();
+  });
 });

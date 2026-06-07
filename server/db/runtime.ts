@@ -1,7 +1,12 @@
 import fs from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 
-import { DEFAULT_DB_PATH, DEFAULT_LOGS_DIR, LEGACY_DB_PATH } from "../config/runtime.ts";
+import {
+  DEFAULT_DB_PATH,
+  DEFAULT_LOGS_DIR,
+  LEGACY_CLAW_EMPIRE_DB_PATH,
+  LEGACY_CLIMPIRE_DB_PATH,
+} from "../config/runtime.ts";
 
 export function readNonNegativeIntEnv(name: string, fallback: number): number {
   const raw = process.env[name];
@@ -60,14 +65,20 @@ export function initializeDatabaseRuntime(): {
   db: DatabaseSync;
   logsDir: string;
 } {
-  if (!process.env.DB_PATH && !fs.existsSync(DEFAULT_DB_PATH) && fs.existsSync(LEGACY_DB_PATH)) {
-    fs.renameSync(LEGACY_DB_PATH, DEFAULT_DB_PATH);
+  function migrateLegacyDatabase(legacyPath: string, legacyName: string): boolean {
+    if (process.env.DB_PATH || fs.existsSync(DEFAULT_DB_PATH) || !fs.existsSync(legacyPath)) return false;
+
+    fs.renameSync(legacyPath, DEFAULT_DB_PATH);
     for (const suffix of ["-wal", "-shm"]) {
-      const src = LEGACY_DB_PATH + suffix;
+      const src = legacyPath + suffix;
       if (fs.existsSync(src)) fs.renameSync(src, DEFAULT_DB_PATH + suffix);
     }
-    console.log("[Claw-Empire] Migrated database: climpire.sqlite -> claw-empire.sqlite");
+    console.log(`[Agent Coworking Space] Migrated database: ${legacyName} -> agent-coworking-space.sqlite`);
+    return true;
   }
+
+  migrateLegacyDatabase(LEGACY_CLAW_EMPIRE_DB_PATH, "claw-empire.sqlite") ||
+    migrateLegacyDatabase(LEGACY_CLIMPIRE_DB_PATH, "climpire.sqlite");
 
   const dbPath = process.env.DB_PATH ?? DEFAULT_DB_PATH;
   const db = new DatabaseSync(dbPath);

@@ -5,7 +5,7 @@ import path from "node:path";
 
 const runtimeDir = path.resolve(process.cwd(), ".tmp", "e2e-runtime");
 const logsDir = path.join(runtimeDir, "logs");
-const dbPath = path.join(runtimeDir, "claw-empire.e2e.sqlite");
+const dbPath = path.join(runtimeDir, "agent-coworking-space.e2e.sqlite");
 
 fs.mkdirSync(runtimeDir, { recursive: true });
 
