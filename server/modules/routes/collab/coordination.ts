@@ -57,6 +57,7 @@ export function initializeCollabCoordination(ctx: RuntimeContext): any {
   const hasExplicitWarningFixRequest = __ctx.hasExplicitWarningFixRequest;
   const isTaskWorkflowInterrupted = __ctx.isTaskWorkflowInterrupted;
   const launchApiProviderAgent = __ctx.launchApiProviderAgent;
+  const launchHermesAgent = __ctx.launchHermesAgent;
   const launchHttpAgent = __ctx.launchHttpAgent;
   const l = __ctx.l;
   const logsDir = __ctx.logsDir;
@@ -307,6 +308,7 @@ export function initializeCollabCoordination(ctx: RuntimeContext): any {
     getProviderModelConfig,
     spawnCliAgent,
     launchApiProviderAgent,
+    launchHermesAgent,
     launchHttpAgent,
     getNextHttpAgentPid,
     handleSubtaskDelegationComplete,

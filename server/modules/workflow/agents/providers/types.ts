@@ -62,6 +62,7 @@ export interface CliToolDef {
   name: string;
   authHint: string;
   checkAuth: () => boolean;
+  checkInstalled?: () => boolean;
   versionArgs?: string[];
   getVersion?: () => string | null;
 }

@@ -18,7 +18,7 @@ export interface SkillDetail {
 }
 
 export type SkillLearnProvider = "claude" | "codex" | "gemini" | "opencode" | "kimi";
-export type SkillHistoryProvider = SkillLearnProvider | "copilot" | "antigravity" | "api";
+export type SkillHistoryProvider = SkillLearnProvider | "copilot" | "antigravity" | "api" | "hermes";
 export type SkillLearnStatus = "queued" | "running" | "succeeded" | "failed";
 
 export interface SkillLearnJob {

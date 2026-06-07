@@ -127,7 +127,7 @@ export function initializeOAuthRuntime(deps: OAuthRuntimeDeps): OAuthRuntimeHelp
   try {
     const agentSql =
       (db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='agents'").get() as any)?.sql ?? "";
-    if (agentSql && !agentSql.includes("'kimi'")) {
+    if (agentSql && (!agentSql.includes("'kimi'") || !agentSql.includes("'hermes'"))) {
       const workflowPackExpr = hasColumn("agents", "workflow_pack_key")
         ? "COALESCE(workflow_pack_key, 'development')"
         : "'development'";
@@ -144,7 +144,7 @@ export function initializeOAuthRuntime(deps: OAuthRuntimeDeps): OAuthRuntimeHelp
           workflow_pack_key TEXT NOT NULL DEFAULT 'development',
           role TEXT NOT NULL CHECK(role IN ('team_leader','senior','junior','intern')),
           acts_as_planning_leader INTEGER NOT NULL DEFAULT 0 CHECK(acts_as_planning_leader IN (0,1)),
-          cli_provider TEXT CHECK(cli_provider IN ('claude','codex','gemini','opencode','kimi','copilot','antigravity','api')),
+          cli_provider TEXT CHECK(cli_provider IN ('claude','codex','gemini','opencode','kimi','copilot','antigravity','api','hermes')),
           oauth_account_id TEXT,
           api_provider_id TEXT,
           api_model TEXT,
@@ -203,14 +203,14 @@ export function initializeOAuthRuntime(deps: OAuthRuntimeDeps): OAuthRuntimeHelp
     const historySql =
       (db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='skill_learning_history'").get() as any)
         ?.sql ?? "";
-    if (historySql && !historySql.includes("'kimi'")) {
+    if (historySql && (!historySql.includes("'kimi'") || !historySql.includes("'hermes'"))) {
       runInTransaction(() => {
         db.exec(`
         DROP TABLE IF EXISTS skill_learning_history_new;
         CREATE TABLE skill_learning_history_new (
           id TEXT PRIMARY KEY,
           job_id TEXT NOT NULL,
-          provider TEXT NOT NULL CHECK(provider IN ('claude','codex','gemini','opencode','kimi','copilot','antigravity','api')),
+          provider TEXT NOT NULL CHECK(provider IN ('claude','codex','gemini','opencode','kimi','copilot','antigravity','api','hermes')),
           repo TEXT NOT NULL,
           skill_id TEXT NOT NULL,
           skill_label TEXT NOT NULL,

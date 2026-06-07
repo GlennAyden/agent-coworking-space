@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Run a visual coworking office for autonomous AI agents</strong><br>
-  A local-first AI agent office simulator that orchestrates <b>CLI</b>, <b>OAuth</b>, and <b>API-connected</b> providers (including <b>Claude Code</b>, <b>Codex CLI</b>, <b>Gemini CLI</b>, <b>OpenCode</b>, <b>Kimi Code</b>, <b>GitHub Copilot</b>, and <b>Antigravity</b>) as a virtual company of autonomous agents.
+  A local-first AI agent office simulator that orchestrates <b>CLI</b>, <b>OAuth</b>, <b>API-connected</b>, and <b>remote runner</b> providers (including <b>Claude Code</b>, <b>Codex CLI</b>, <b>Gemini CLI</b>, <b>OpenCode</b>, <b>Kimi Code</b>, <b>GitHub Copilot</b>, <b>Antigravity</b>, and <b>Hermes Agent</b>) as a virtual company of autonomous agents.
 </p>
 
 <p align="center">
@@ -208,7 +208,7 @@ Usage path: **Chat window > Report Request button**, then enter your request.
 | **Office Pack Profiles**       | Pack-scoped office profiles apply dedicated department topology, naming/theme presets, and isolated agent/department data per pack (except DB-backed development baseline)                                  |
 | **Kanban Task Board**          | Full task lifecycle — Inbox, Planned, Collaborating, In Progress, Review, Done — with drag-and-drop                                                                                                         |
 | **CEO Chat & Directives**      | Direct communication with team leaders; `$` directives support meeting choice plus project path/context routing (`project_path`, `project_context`)                                                         |
-| **Multi-Provider Support**     | Claude Code, Codex CLI, Gemini CLI, OpenCode, Kimi Code, Antigravity — all from one dashboard                                                                                                               |
+| **Multi-Provider Support**     | Claude Code, Codex CLI, Gemini CLI, OpenCode, Kimi Code, Antigravity, Hermes Agent — all from one dashboard                                                                                                 |
 | **External API Providers**     | Connect agents to external LLM APIs (OpenAI, Anthropic, Google, Ollama, OpenRouter, Together, Groq, Cerebras, custom) via Settings > API tab, with official presets for OpenCode Go and Bailian Coding Plan |
 | **OAuth Integration**          | GitHub & Google OAuth with AES-encrypted token storage in local SQLite                                                                                                                                      |
 | **Real-time WebSocket**        | Live status updates, activity feed, and agent state synchronization                                                                                                                                         |
@@ -646,6 +646,11 @@ Copy `.env.example` to `.env`. All secrets stay local — never commit `.env`.
 | `OAUTH_GOOGLE_CLIENT_ID`               | No                       | Google OAuth client ID                                                                                                                       |
 | `OAUTH_GOOGLE_CLIENT_SECRET`           | No                       | Google OAuth client secret                                                                                                                   |
 | `OPENAI_API_KEY`                       | No                       | OpenAI API key (for Codex)                                                                                                                   |
+| `HERMES_API_BASE_URL`                  | For Hermes Agent         | Base URL for the Hermes Agent API that exposes `/v1/runs` and run event streams                                                              |
+| `HERMES_API_KEY`                       | For Hermes Agent         | Bearer token sent to the Hermes Agent API                                                                                                    |
+| `HERMES_REMOTE_PROJECT_PATH`           | Recommended for Hermes   | Project path visible to Hermes on the remote machine/VPS; falls back to the local task path if unset                                         |
+| `HERMES_API_MODEL`                     | No                       | Optional default model override for Hermes Agent runs                                                                                        |
+| `HERMES_AUTO_APPROVAL`                 | No                       | Optional approval response for Hermes tool approval requests: `once`, `session`, `always`, or `deny`                                         |
 | `REVIEW_MEETING_ONESHOT_TIMEOUT_MS`    | No                       | One-shot meeting timeout in milliseconds (default `65000`; backward-compatible: values `<= 600` are treated as seconds)                      |
 | `UPDATE_CHECK_ENABLED`                 | No                       | Enable in-app update check banner (`1` default, set `0` to disable)                                                                          |
 | `UPDATE_CHECK_REPO`                    | No                       | GitHub repo slug used for update checks (default: `GlennAyden/agent-coworking-space`)                                                         |
@@ -798,11 +803,12 @@ Notes:
 - Direct API presets use the provider endpoint model IDs such as `glm-5`, `kimi-k2.5`, and `minimax-m2.5`. They do **not** use OpenCode CLI model IDs like `opencode-go/<model-id>`.
 - Bailian Coding Plan keys are intended for the interactive coding tool flow. Review the provider documentation before reusing those keys in other environments.
 
-Agent Coworking Space supports three provider paths:
+Agent Coworking Space supports four provider paths:
 
 - **CLI tools** — install local coding CLIs and run tasks through local processes
 - **OAuth accounts** — connect supported providers (for example GitHub/Google-backed flows) via secure token exchange
 - **Direct API keys** — bind agents to external LLM APIs from **Settings > API**
+- **Hermes Agent remote runner** — keep this UI/API local while delegating task execution to a Hermes Agent API on another machine or VPS
 
 For CLI mode, install at least one:
 
@@ -815,6 +821,8 @@ For CLI mode, install at least one:
 | [Kimi Code](https://github.com/MoonshotAI/kimi-cli)           | `uv tool install --python 3.13 kimi-cli` | `kimi auth login`              |
 
 Configure providers and models in the **Settings > CLI Tools** panel within the app.
+
+For Hermes Agent, run the Hermes API service where the remote runner can access the project workspace, then set `HERMES_API_BASE_URL`, `HERMES_API_KEY`, and usually `HERMES_REMOTE_PROJECT_PATH` in `.env`. Agents can then be assigned the `Hermes Agent` provider from the same agent/provider UI. Hermes run output is streamed back into task logs and WebSocket updates through the local Agent Coworking Space backend.
 
 Alternatively, connect agents to external LLM APIs (no CLI installation required) via the **Settings > API** tab. API keys are stored encrypted (AES-256-GCM) in the local SQLite database — not in `.env` or source code.
 Skills learn/unlearn automation is currently designed for CLI-capable providers.

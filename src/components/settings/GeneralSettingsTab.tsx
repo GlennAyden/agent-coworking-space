@@ -160,6 +160,11 @@ export default function GeneralSettingsTab({ t, form, setForm, saved, onSave }: 
             <option value="codex">Codex CLI</option>
             <option value="gemini">Gemini CLI</option>
             <option value="opencode">OpenCode</option>
+            <option value="kimi">Kimi Code</option>
+            <option value="copilot">GitHub Copilot</option>
+            <option value="antigravity">Antigravity</option>
+            <option value="api">API Provider</option>
+            <option value="hermes">Hermes Agent</option>
           </select>
         </div>
 

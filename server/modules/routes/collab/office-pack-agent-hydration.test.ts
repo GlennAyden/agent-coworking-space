@@ -93,8 +93,8 @@ describe("hydrateOfficePackAgentFromSettings", () => {
             department_id: "planning",
             role: "team_leader",
             acts_as_planning_leader: 1,
-            cli_provider: "claude",
-            cli_model: "claude-opus-4-6",
+            cli_provider: "hermes",
+            cli_model: "gpt-5-codex",
             avatar_emoji: "🎬",
             sprite_number: 8,
             personality: "planning lead",
@@ -109,8 +109,8 @@ describe("hydrateOfficePackAgentFromSettings", () => {
     expect(hydrated?.id).toBe("video_preprod-seed-1");
     expect(hydrated?.name).toBe("Rian");
     expect(hydrated?.department_id).toBe("planning");
-    expect(hydrated?.cli_provider).toBe("claude");
-    expect(hydrated?.cli_model).toBe("claude-opus-4-6");
+    expect(hydrated?.cli_provider).toBe("hermes");
+    expect(hydrated?.cli_model).toBe("gpt-5-codex");
     expect((hydrated as unknown as { sprite_number?: number }).sprite_number).toBe(8);
     expect((hydrated as unknown as { acts_as_planning_leader?: number }).acts_as_planning_leader).toBe(1);
 

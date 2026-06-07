@@ -22,6 +22,7 @@ export function registerRoutesPartB(ctx: RuntimeContext): RouteCollabExports {
   const buildCliFailureMessage = __ctx.buildCliFailureMessage;
   const buildDirectReplyPrompt = __ctx.buildDirectReplyPrompt;
   const executeApiProviderAgent = __ctx.executeApiProviderAgent;
+  const executeHermesAgent = __ctx.executeHermesAgent;
   const executeCopilotAgent = __ctx.executeCopilotAgent;
   const executeAntigravityAgent = __ctx.executeAntigravityAgent;
   const buildTaskExecutionPrompt = __ctx.buildTaskExecutionPrompt;
@@ -40,6 +41,7 @@ export function registerRoutesPartB(ctx: RuntimeContext): RouteCollabExports {
   const getNextHttpAgentPid = __ctx.getNextHttpAgentPid;
   const isTaskWorkflowInterrupted = __ctx.isTaskWorkflowInterrupted;
   const launchApiProviderAgent = __ctx.launchApiProviderAgent;
+  const launchHermesAgent = __ctx.launchHermesAgent;
   const launchHttpAgent = __ctx.launchHttpAgent;
   const logsDir = __ctx.logsDir;
   const notifyCeo = __ctx.notifyCeo;
@@ -800,6 +802,7 @@ export function registerRoutesPartB(ctx: RuntimeContext): RouteCollabExports {
     spawnCliAgent,
     getNextHttpAgentPid,
     launchApiProviderAgent,
+    launchHermesAgent,
     launchHttpAgent,
     startProgressTimer,
     startTaskExecutionForAgent,
@@ -886,6 +889,7 @@ export function registerRoutesPartB(ctx: RuntimeContext): RouteCollabExports {
     buildDirectReplyPrompt,
     runAgentOneShot,
     executeApiProviderAgent,
+    executeHermesAgent,
     executeCopilotAgent,
     executeAntigravityAgent,
     isTaskWorkflowInterrupted,

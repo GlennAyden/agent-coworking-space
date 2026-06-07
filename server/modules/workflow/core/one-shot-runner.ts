@@ -9,6 +9,7 @@ type CreateOneShotRunnerDeps = {
   broadcast: (event: string, payload: unknown) => void;
   getProviderModelConfig: () => Record<string, { model?: string; reasoningLevel?: string }>;
   executeApiProviderAgent: (...args: any[]) => Promise<void>;
+  executeHermesAgent: (...args: any[]) => Promise<{ runId: string; exitCode: number }>;
   executeCopilotAgent: (...args: any[]) => Promise<void>;
   executeAntigravityAgent: (...args: any[]) => Promise<void>;
   killPidTree: (pid: number) => void;
@@ -27,6 +28,7 @@ export function createOneShotRunner(deps: CreateOneShotRunnerDeps) {
     broadcast,
     getProviderModelConfig,
     executeApiProviderAgent,
+    executeHermesAgent,
     executeCopilotAgent,
     executeAntigravityAgent,
     killPidTree,
@@ -156,6 +158,30 @@ export function createOneShotRunner(deps: CreateOneShotRunnerDeps) {
               return safeWrite(text);
             },
           );
+        } finally {
+          clearTimeout(timeout);
+        }
+        if (!rawOutput.trim() && fs.existsSync(logPath)) rawOutput = fs.readFileSync(logPath, "utf8");
+      } else if (provider === "hermes") {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), timeoutMs);
+        const hermesWrite = (text: string) => {
+          rawOutput += text;
+          return safeWrite(text);
+        };
+        try {
+          const modelConfig = getProviderModelConfig();
+          const model = agent.cli_model || modelConfig[provider]?.model || undefined;
+          const result = await executeHermesAgent(
+            prompt,
+            projectPath,
+            logStream,
+            controller.signal,
+            streamTaskId ?? undefined,
+            model,
+            hermesWrite,
+          );
+          exitCode = result.exitCode;
         } finally {
           clearTimeout(timeout);
         }

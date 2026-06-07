@@ -98,6 +98,7 @@ export function registerRoutesPartA(ctx: RuntimeContext): Record<string, never> 
   const isTaskWorkflowInterrupted = __ctx.isTaskWorkflowInterrupted;
   const killPidTree = __ctx.killPidTree;
   const launchApiProviderAgent = __ctx.launchApiProviderAgent;
+  const launchHermesAgent = __ctx.launchHermesAgent;
   const launchHttpAgent = __ctx.launchHttpAgent;
   const logsDir = __ctx.logsDir;
   const meetingPhaseByAgent = __ctx.meetingPhaseByAgent;
@@ -426,6 +427,7 @@ export function registerRoutesPartA(ctx: RuntimeContext): Record<string, never> 
     notifyCeo,
     startProgressTimer,
     launchApiProviderAgent,
+    launchHermesAgent,
     launchHttpAgent,
     spawnCliAgent,
     handleTaskRunComplete,

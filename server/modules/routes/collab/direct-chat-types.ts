@@ -72,6 +72,7 @@ export type DirectChatDeps = {
     opts: { projectPath: string; rawOutput: true; noTools?: boolean },
   ) => Promise<DirectReplyPayload>;
   executeApiProviderAgent: RuntimeContext["executeApiProviderAgent"];
+  executeHermesAgent: RuntimeContext["executeHermesAgent"];
   executeCopilotAgent: RuntimeContext["executeCopilotAgent"];
   executeAntigravityAgent: RuntimeContext["executeAntigravityAgent"];
   isTaskWorkflowInterrupted: (taskId: string) => boolean;

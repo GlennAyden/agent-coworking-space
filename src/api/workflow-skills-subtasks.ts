@@ -124,7 +124,7 @@ export async function getSkillDetail(source: string, skillId: string): Promise<S
 
 export type SkillLearnProvider = "claude" | "codex" | "gemini" | "opencode" | "kimi";
 export type SkillLearnStatus = "queued" | "running" | "succeeded" | "failed";
-export type SkillHistoryProvider = SkillLearnProvider | "copilot" | "antigravity" | "api";
+export type SkillHistoryProvider = SkillLearnProvider | "copilot" | "antigravity" | "api" | "hermes";
 
 export interface SkillLearnJob {
   id: string;

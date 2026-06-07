@@ -51,6 +51,7 @@ export const CLI_LABELS: Record<string, string> = {
   copilot: "GitHub Copilot",
   antigravity: "Antigravity",
   api: "API Provider",
+  hermes: "Hermes Agent",
 };
 
 export const SUBTASK_STATUS_ICON: Record<string, string> = {

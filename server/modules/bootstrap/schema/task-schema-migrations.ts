@@ -46,6 +46,27 @@ export function applyTaskSchemaMigrations(db: DbLike): void {
   } catch {
     /* already exists */
   }
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS task_remote_runs (
+        task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+        provider TEXT NOT NULL,
+        remote_run_id TEXT,
+        status TEXT,
+        base_url TEXT,
+        last_event TEXT,
+        error TEXT,
+        created_at INTEGER DEFAULT (unixepoch()*1000),
+        updated_at INTEGER DEFAULT (unixepoch()*1000),
+        PRIMARY KEY (task_id, provider)
+      )
+    `);
+    db.exec(
+      "CREATE INDEX IF NOT EXISTS idx_task_remote_runs_provider_updated ON task_remote_runs(provider, updated_at DESC)",
+    );
+  } catch {
+    /* already exists */
+  }
   // Task creation audit completion flag
   try {
     db.exec("ALTER TABLE task_creation_audits ADD COLUMN completed INTEGER NOT NULL DEFAULT 0");

@@ -9,7 +9,17 @@ import {
 type DbLike = Pick<DatabaseSync, "prepare">;
 
 const VALID_AGENT_ROLES = new Set(["team_leader", "senior", "junior", "intern"]);
-const VALID_CLI_PROVIDERS = new Set(["claude", "codex", "gemini", "opencode", "kimi", "copilot", "antigravity", "api"]);
+const VALID_CLI_PROVIDERS = new Set([
+  "claude",
+  "codex",
+  "gemini",
+  "opencode",
+  "kimi",
+  "copilot",
+  "antigravity",
+  "api",
+  "hermes",
+]);
 
 function asObject(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;

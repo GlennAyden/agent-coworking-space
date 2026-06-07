@@ -5,6 +5,7 @@ import { createCredentialTools } from "./providers/credential-tools.ts";
 import { createUsageCliTools } from "./providers/usage-cli-tools.ts";
 import { createHttpAgentTools } from "./providers/http-agent-tools.ts";
 import { createApiProviderTools } from "./providers/api-provider-tools.ts";
+import { createHermesAgentTools } from "./providers/hermes-agent-tools.ts";
 
 export function initializeWorkflowAgentProviders(ctx: RuntimeContext): any {
   const __ctx: RuntimeContext = ctx;
@@ -117,6 +118,7 @@ export function initializeWorkflowAgentProviders(ctx: RuntimeContext): any {
   });
   const {
     createSafeLogStreamOps,
+    parseHttpAgentSubtasks,
     parseSSEStream,
     parseGeminiSSEStream,
     executeCopilotAgent,
@@ -137,6 +139,18 @@ export function initializeWorkflowAgentProviders(ctx: RuntimeContext): any {
   });
   const { executeApiProviderAgent, launchApiProviderAgent } = apiProviderTools;
 
+  const hermesAgentTools = createHermesAgentTools({
+    db,
+    logsDir,
+    activeProcesses,
+    broadcast,
+    normalizeStreamChunk,
+    handleTaskRunComplete,
+    createSafeLogStreamOps,
+    parseHttpAgentSubtasks,
+  });
+  const { executeHermesAgent, launchHermesAgent } = hermesAgentTools;
+
   return {
     httpAgentCounter,
     getNextHttpAgentPid,
@@ -153,8 +167,10 @@ export function initializeWorkflowAgentProviders(ctx: RuntimeContext): any {
     executeCopilotAgent,
     executeAntigravityAgent,
     executeApiProviderAgent,
+    executeHermesAgent,
     launchHttpAgent,
     launchApiProviderAgent,
+    launchHermesAgent,
     killPidTree,
     isPidAlive,
     interruptPidTree,

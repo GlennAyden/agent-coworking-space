@@ -33,6 +33,7 @@ type CreateExecutionStartTaskToolsDeps = {
   hasExplicitWarningFixRequest: RuntimeContext["hasExplicitWarningFixRequest"];
   getNextHttpAgentPid: RuntimeContext["getNextHttpAgentPid"];
   launchApiProviderAgent: RuntimeContext["launchApiProviderAgent"];
+  launchHermesAgent: RuntimeContext["launchHermesAgent"];
   launchHttpAgent: RuntimeContext["launchHttpAgent"];
   getProviderModelConfig: RuntimeContext["getProviderModelConfig"];
   spawnCliAgent: RuntimeContext["spawnCliAgent"];
@@ -65,6 +66,7 @@ export function createExecutionStartTaskTools(deps: CreateExecutionStartTaskTool
     hasExplicitWarningFixRequest,
     getNextHttpAgentPid,
     launchApiProviderAgent,
+    launchHermesAgent,
     launchHttpAgent,
     getProviderModelConfig,
     spawnCliAgent,
@@ -86,7 +88,7 @@ export function createExecutionStartTaskTools(deps: CreateExecutionStartTaskTool
     broadcast("agent_status", db.prepare("SELECT * FROM agents WHERE id = ?").get(execAgent.id));
 
     const provider = execAgent.cli_provider || "claude";
-    if (!["claude", "codex", "gemini", "opencode", "kimi", "copilot", "antigravity", "api"].includes(provider)) return;
+    if (!["claude", "codex", "gemini", "opencode", "kimi", "copilot", "antigravity", "api", "hermes"].includes(provider)) return;
     const executionSession = ensureTaskExecutionSession(taskId, execAgent.id, provider);
     const pendingInterruptPrompts = loadPendingInterruptPrompts(db as any, taskId, executionSession.sessionId);
     const interruptPromptBlock = buildInterruptPromptBlock(pendingInterruptPrompts);
@@ -273,6 +275,12 @@ export function createExecutionStartTaskTools(deps: CreateExecutionStartTaskTool
         controller,
         fakePid,
       );
+    } else if (provider === "hermes") {
+      const controller = new AbortController();
+      const fakePid = getNextHttpAgentPid();
+      const modelConfig = getProviderModelConfig();
+      const modelForProvider = execAgent.cli_model || modelConfig[provider]?.model || undefined;
+      launchHermesAgent(taskId, spawnPrompt, agentCwd, logFilePath, controller, fakePid, modelForProvider ?? null);
     } else if (provider === "copilot" || provider === "antigravity") {
       const controller = new AbortController();
       const fakePid = getNextHttpAgentPid();

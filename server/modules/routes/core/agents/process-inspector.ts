@@ -9,7 +9,7 @@ type SystemProcessInfo = {
   command: string;
 };
 
-type ManagedProcessProvider = "claude" | "codex" | "gemini" | "opencode" | "kimi" | "node" | "python";
+type ManagedProcessProvider = "claude" | "codex" | "gemini" | "opencode" | "kimi" | "hermes" | "node" | "python";
 
 const CLI_EXECUTABLE_PROVIDER_MAP: Record<string, ManagedProcessProvider> = {
   claude: "claude",
@@ -22,6 +22,8 @@ const CLI_EXECUTABLE_PROVIDER_MAP: Record<string, ManagedProcessProvider> = {
   "opencode.exe": "opencode",
   kimi: "kimi",
   "kimi.exe": "kimi",
+  hermes: "hermes",
+  "hermes.exe": "hermes",
   node: "node",
   "node.exe": "node",
   python: "python",

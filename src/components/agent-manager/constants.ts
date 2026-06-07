@@ -11,6 +11,7 @@ export const CLI_PROVIDERS: CliProvider[] = [
   "copilot",
   "antigravity",
   "api",
+  "hermes",
 ];
 
 export const ROLE_LABEL: Record<string, { ko: string; en: string }> = {

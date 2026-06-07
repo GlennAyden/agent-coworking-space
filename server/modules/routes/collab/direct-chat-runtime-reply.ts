@@ -27,6 +27,7 @@ type DirectReplyRuntimeDeps = Pick<
   | "chooseSafeReply"
   | "runAgentOneShot"
   | "executeApiProviderAgent"
+  | "executeHermesAgent"
   | "executeCopilotAgent"
   | "executeAntigravityAgent"
 >;
@@ -348,6 +349,76 @@ export function createDirectReplyRuntime(deps: DirectReplyRuntimeDeps) {
             insertStreamingMessage(msgId, agent, finalReply);
             void relayReplyToMessenger(options, agent, finalReply).catch((err) => {
               console.warn(`[messenger-reply] failed to relay API reply from ${agent.name}: ${String(err)}`);
+            });
+            return;
+          }
+
+          if (agent.cli_provider === "hermes") {
+            const msgId = randomUUID();
+            deps.broadcast("chat_stream", {
+              phase: "start",
+              message_id: msgId,
+              agent_id: agent.id,
+              agent_name: agent.name,
+              agent_avatar: agent.avatar_emoji ?? "ðŸ¤–",
+            });
+
+            let fullText = "";
+            let hermesError = "";
+            try {
+              const logStream = fs.createWriteStream(path.join(deps.logsDir, `direct-${agent.id}-${Date.now()}.log`), {
+                flags: "w",
+              });
+              const controller = new AbortController();
+              const timeout = setTimeout(() => controller.abort(), 180_000);
+              const streamCb = (text: string) => {
+                fullText += text;
+                logStream.write(text);
+                deps.broadcast("chat_stream", {
+                  phase: "delta",
+                  message_id: msgId,
+                  agent_id: agent.id,
+                  text,
+                });
+                return true;
+              };
+              try {
+                await deps.executeHermesAgent(
+                  built.prompt,
+                  projectPath,
+                  logStream,
+                  controller.signal,
+                  undefined,
+                  agent.cli_model ?? null,
+                  streamCb,
+                );
+              } finally {
+                clearTimeout(timeout);
+                logStream.end();
+              }
+            } catch (err: any) {
+              hermesError = err?.message || String(err);
+              console.error(`[scheduleAgentReply:Hermes] Error for ${agent.name}:`, hermesError);
+            }
+
+            const contentOnly = fullText
+              .replace(/^\[hermes[^\]]*\][^\n]*\n/gm, "")
+              .replace(/---+/g, "")
+              .trim();
+
+            let finalReply: string;
+            if (contentOnly) {
+              finalReply = contentOnly.length > 12000 ? contentOnly.slice(0, 12000) : contentOnly;
+            } else if (hermesError) {
+              finalReply = `[Hermes Error] ${hermesError}`;
+            } else {
+              finalReply = deps.chooseSafeReply({ text: "" }, built.lang, "direct", agent);
+            }
+            finalReply = normalizeAgentReply(finalReply);
+
+            insertStreamingMessage(msgId, agent, finalReply);
+            void relayReplyToMessenger(options, agent, finalReply).catch((err) => {
+              console.warn(`[messenger-reply] failed to relay Hermes reply from ${agent.name}: ${String(err)}`);
             });
             return;
           }

@@ -1,6 +1,15 @@
 import type { DatabaseSync } from "node:sqlite";
 
-type PromptSkillProvider = "claude" | "codex" | "gemini" | "opencode" | "kimi" | "copilot" | "antigravity" | "api";
+type PromptSkillProvider =
+  | "claude"
+  | "codex"
+  | "gemini"
+  | "opencode"
+  | "kimi"
+  | "copilot"
+  | "antigravity"
+  | "api"
+  | "hermes";
 type PromptSkillRow = {
   repo: string;
   skill_id: string;
@@ -20,7 +29,8 @@ function isPromptSkillProvider(provider: string): provider is PromptSkillProvide
     provider === "kimi" ||
     provider === "copilot" ||
     provider === "antigravity" ||
-    provider === "api"
+    provider === "api" ||
+    provider === "hermes"
   );
 }
 
@@ -33,6 +43,7 @@ function getPromptSkillProviderDisplayName(provider: string): string {
   if (provider === "copilot") return "GitHub Copilot";
   if (provider === "antigravity") return "Antigravity";
   if (provider === "api") return "API Provider";
+  if (provider === "hermes") return "Hermes Agent";
   return provider || "unknown";
 }
 

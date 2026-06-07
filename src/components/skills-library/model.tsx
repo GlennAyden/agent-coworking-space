@@ -294,6 +294,7 @@ export const LEARNED_PROVIDER_ORDER: SkillHistoryProvider[] = [
   "copilot",
   "antigravity",
   "api",
+  "hermes",
 ];
 
 export type UnlearnEffect = "pot" | "hammer";
@@ -328,6 +329,7 @@ export function learnedProviderLabel(provider: SkillHistoryProvider): string {
   if (provider === "kimi") return "Kimi Code";
   if (provider === "copilot") return "GitHub Copilot";
   if (provider === "antigravity") return "Antigravity";
+  if (provider === "hermes") return "Hermes Agent";
   return "API Provider";
 }
 
@@ -381,6 +383,7 @@ export function cliProviderIcon(provider: SkillHistoryProvider) {
   if (provider === "opencode") return <span className="text-[11px] text-slate-200">⚪</span>;
   if (provider === "copilot") return <span className="text-[11px] text-slate-200">🚀</span>;
   if (provider === "antigravity") return <span className="text-[11px] text-slate-200">🌌</span>;
+  if (provider === "hermes") return <span className="text-[11px] text-slate-200">H</span>;
   return <span className="text-[11px] text-slate-200">🔌</span>;
 }
 

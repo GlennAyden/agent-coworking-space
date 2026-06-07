@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS agents (
   workflow_pack_key TEXT NOT NULL DEFAULT 'development',
   role TEXT NOT NULL CHECK(role IN ('team_leader','senior','junior','intern')),
   acts_as_planning_leader INTEGER NOT NULL DEFAULT 0 CHECK(acts_as_planning_leader IN (0,1)),
-  cli_provider TEXT CHECK(cli_provider IN ('claude','codex','gemini','opencode','kimi','copilot','antigravity','api')),
+  cli_provider TEXT CHECK(cli_provider IN ('claude','codex','gemini','opencode','kimi','copilot','antigravity','api','hermes')),
   oauth_account_id TEXT,
   api_provider_id TEXT,
   api_model TEXT,
@@ -320,7 +320,7 @@ CREATE TABLE IF NOT EXISTS review_round_decision_states (
 CREATE TABLE IF NOT EXISTS skill_learning_history (
   id TEXT PRIMARY KEY,
   job_id TEXT NOT NULL,
-  provider TEXT NOT NULL CHECK(provider IN ('claude','codex','gemini','opencode','kimi','copilot','antigravity','api')),
+  provider TEXT NOT NULL CHECK(provider IN ('claude','codex','gemini','opencode','kimi','copilot','antigravity','api','hermes')),
   repo TEXT NOT NULL,
   skill_id TEXT NOT NULL,
   skill_label TEXT NOT NULL,
@@ -375,5 +375,21 @@ CREATE TABLE IF NOT EXISTS api_providers (
   created_at INTEGER DEFAULT (unixepoch()*1000),
   updated_at INTEGER DEFAULT (unixepoch()*1000)
 );
+
+CREATE TABLE IF NOT EXISTS task_remote_runs (
+  task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  provider TEXT NOT NULL,
+  remote_run_id TEXT,
+  status TEXT,
+  base_url TEXT,
+  last_event TEXT,
+  error TEXT,
+  created_at INTEGER DEFAULT (unixepoch()*1000),
+  updated_at INTEGER DEFAULT (unixepoch()*1000),
+  PRIMARY KEY (task_id, provider)
+);
+
+CREATE INDEX IF NOT EXISTS idx_task_remote_runs_provider_updated
+  ON task_remote_runs(provider, updated_at DESC);
 `);
 }

@@ -52,6 +52,7 @@ export function createCrossDeptCooperationTools(deps: CrossDeptCooperationDeps) 
     getProviderModelConfig,
     spawnCliAgent,
     launchApiProviderAgent,
+    launchHermesAgent,
     launchHttpAgent,
     getNextHttpAgentPid,
     handleSubtaskDelegationComplete,
@@ -505,7 +506,7 @@ export function createCrossDeptCooperationTools(deps: CrossDeptCooperationDeps) 
 
       // Actually spawn the CLI agent
       const execProvider = execAgent.cli_provider || "claude";
-      if (["claude", "codex", "gemini", "opencode", "kimi", "copilot", "antigravity", "api"].includes(execProvider)) {
+      if (["claude", "codex", "gemini", "opencode", "kimi", "copilot", "antigravity", "api", "hermes"].includes(execProvider)) {
         const crossTaskData = db.prepare("SELECT * FROM tasks WHERE id = ?").get(crossTaskId) as
           | {
               title: string;
@@ -584,6 +585,21 @@ export function createCrossDeptCooperationTools(deps: CrossDeptCooperationDeps) 
               logFilePath,
               controller,
               fakePid,
+              finalizeCrossDeptRun,
+            );
+          } else if (execProvider === "hermes") {
+            const controller = new AbortController();
+            const fakePid = getNextHttpAgentPid();
+            const crossModelConfig = getProviderModelConfig();
+            const crossModel = execAgent.cli_model || crossModelConfig[execProvider]?.model || undefined;
+            launchHermesAgent(
+              crossTaskId,
+              sessionPrompt,
+              projPath,
+              logFilePath,
+              controller,
+              fakePid,
+              crossModel ?? null,
               finalizeCrossDeptRun,
             );
           } else if (execProvider === "copilot" || execProvider === "antigravity") {

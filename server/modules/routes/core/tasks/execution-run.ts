@@ -42,6 +42,7 @@ export type TaskRunRouteDeps = Pick<
   | "notifyCeo"
   | "startProgressTimer"
   | "launchApiProviderAgent"
+  | "launchHermesAgent"
   | "launchHttpAgent"
   | "spawnCliAgent"
   | "handleTaskRunComplete"
@@ -78,6 +79,7 @@ export function registerTaskRunRoute(deps: TaskRunRouteDeps): void {
     notifyCeo,
     startProgressTimer,
     launchApiProviderAgent,
+    launchHermesAgent,
     launchHttpAgent,
     spawnCliAgent,
     handleTaskRunComplete,
@@ -106,7 +108,9 @@ export function registerTaskRunRoute(deps: TaskRunRouteDeps): void {
       const staleChild = activeProcesses.get(id);
       const stalePid = typeof staleChild?.pid === "number" ? staleChild.pid : null;
       let pidIsAlive = false;
-      if (stalePid !== null && stalePid > 0) {
+      if (stalePid !== null && stalePid <= 0) {
+        pidIsAlive = true;
+      } else if (stalePid !== null && stalePid > 0) {
         try {
           process.kill(stalePid, 0);
           pidIsAlive = true;
@@ -284,7 +288,7 @@ export function registerTaskRunRoute(deps: TaskRunRouteDeps): void {
     }
 
     const provider = agent.cli_provider || "claude";
-    if (!["claude", "codex", "gemini", "opencode", "kimi", "copilot", "antigravity", "api"].includes(provider)) {
+    if (!["claude", "codex", "gemini", "opencode", "kimi", "copilot", "antigravity", "api", "hermes"].includes(provider)) {
       return res.status(400).json({ error: "unsupported_provider", provider });
     }
     ensureVideoPreprodRemotionBestPracticesSkill({
@@ -556,6 +560,54 @@ Whenever you complete a subtask, report it in this format:
         controller,
         fakePid,
       );
+      return res.json({ ok: true, pid: fakePid, logPath, cwd: agentCwd, worktree: !!worktreePath });
+    }
+
+    if (provider === "hermes") {
+      const controller = new AbortController();
+      const fakePid = getNextHttpAgentPid();
+
+      const t = nowMs();
+      db.prepare(
+        "UPDATE tasks SET status = 'in_progress', assigned_agent_id = ?, started_at = ?, updated_at = ? WHERE id = ?",
+      ).run(agentId, t, t, id);
+      db.prepare("UPDATE agents SET status = 'working', current_task_id = ? WHERE id = ?").run(id, agentId);
+
+      const updatedTask = db.prepare("SELECT * FROM tasks WHERE id = ?").get(id);
+      const updatedAgent = db.prepare("SELECT * FROM agents WHERE id = ?").get(agentId);
+      broadcast("task_update", updatedTask);
+      broadcast("agent_status", updatedAgent);
+      notifyTaskStatus(id, task.title, "in_progress", taskLang);
+
+      const assigneeName = getAgentDisplayName(agent as unknown as AgentRow, taskLang);
+      const worktreeNote = pickL(
+        l(
+          [` (ê²©ë¦¬ ë¸Œëžœì¹˜: climpire/${id.slice(0, 8)})`],
+          [` (isolated branch: climpire/${id.slice(0, 8)})`],
+          [` (åˆ†é›¢ãƒ–ãƒ©ãƒ³ãƒ: climpire/${id.slice(0, 8)})`],
+          [`ï¼ˆéš”ç¦»åˆ†æ”¯: climpire/${id.slice(0, 8)}ï¼‰`],
+        ),
+        taskLang,
+      );
+      notifyCeo(
+        pickL(
+          l(
+            [`${assigneeName}ê°€ '${task.title}' ìž‘ì—…ì„ ì‹œìž‘í–ˆìŠµë‹ˆë‹¤.${worktreeNote}`],
+            [`${assigneeName} started work on '${task.title}'.${worktreeNote}`],
+            [`${assigneeName}ãŒ '${task.title}' ã®ä½œæ¥­ã‚’é–‹å§‹ã—ã¾ã—ãŸã€‚${worktreeNote}`],
+            [`${assigneeName} å·²å¼€å§‹å¤„ç† '${task.title}'ã€‚${worktreeNote}`],
+          ),
+          taskLang,
+        ),
+        id,
+      );
+
+      const taskRow = db.prepare("SELECT department_id FROM tasks WHERE id = ?").get(id) as
+        | { department_id: string | null }
+        | undefined;
+      startProgressTimer(id, task.title, taskRow?.department_id ?? null);
+
+      launchHermesAgent(id, prompt, agentCwd, logPath, controller, fakePid, mainModel ?? null);
       return res.json({ ok: true, pid: fakePid, logPath, cwd: agentCwd, worktree: !!worktreePath });
     }
 

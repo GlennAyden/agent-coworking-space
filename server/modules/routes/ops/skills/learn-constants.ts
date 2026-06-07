@@ -17,6 +17,7 @@ export const SKILL_HISTORY_PROVIDER_TO_AGENT: Record<SkillHistoryProvider, strin
   copilot: "github-copilot",
   antigravity: "antigravity",
   api: null,
+  hermes: null,
 };
 
 export const SKILL_LEARN_REPO_RE = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)*$/;
@@ -36,5 +37,11 @@ export function isSkillLearnProvider(value: string): value is SkillLearnProvider
 }
 
 export function isSkillHistoryProvider(value: string): value is SkillHistoryProvider {
-  return isSkillLearnProvider(value) || value === "copilot" || value === "antigravity" || value === "api";
+  return (
+    isSkillLearnProvider(value) ||
+    value === "copilot" ||
+    value === "antigravity" ||
+    value === "api" ||
+    value === "hermes"
+  );
 }

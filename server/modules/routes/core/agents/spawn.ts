@@ -23,6 +23,7 @@ export function registerAgentSpawnRoute(ctx: RuntimeContext): void {
     nowMs,
     broadcast,
     launchApiProviderAgent,
+    launchHermesAgent,
     launchHttpAgent,
     spawnCliAgent,
     handleTaskRunComplete,
@@ -124,7 +125,7 @@ export function registerAgentSpawnRoute(ctx: RuntimeContext): void {
     if (!agent) return res.status(404).json({ error: "not_found" });
 
     const provider = agent.cli_provider || "claude";
-    if (!["claude", "codex", "gemini", "opencode", "kimi", "copilot", "antigravity", "api"].includes(provider)) {
+    if (!["claude", "codex", "gemini", "opencode", "kimi", "copilot", "antigravity", "api", "hermes"].includes(provider)) {
       return res.status(400).json({ error: "unsupported_provider", provider });
     }
 
@@ -258,6 +259,23 @@ export function registerAgentSpawnRoute(ctx: RuntimeContext): void {
         controller,
         fakePid,
       );
+      return res.json({ ok: true, pid: fakePid, logPath, cwd: agentCwd });
+    }
+
+    if (provider === "hermes") {
+      const controller = new AbortController();
+      const fakePid = getNextHttpAgentPid();
+      db.prepare("UPDATE agents SET status = 'working' WHERE id = ?").run(id);
+      db.prepare("UPDATE tasks SET status = 'in_progress', started_at = ?, updated_at = ? WHERE id = ?").run(
+        nowMs(),
+        nowMs(),
+        taskId,
+      );
+      const updatedAgent = db.prepare("SELECT * FROM agents WHERE id = ?").get(id);
+      broadcast("agent_status", updatedAgent);
+      broadcast("task_update", db.prepare("SELECT * FROM tasks WHERE id = ?").get(taskId));
+      notifyTaskStatus(taskId, task.title, "in_progress", taskLang);
+      launchHermesAgent(taskId, prompt, agentCwd, logPath, controller, fakePid, spawnModel ?? null);
       return res.json({ ok: true, pid: fakePid, logPath, cwd: agentCwd });
     }
 

@@ -223,6 +223,13 @@ export function createUsageCliTools(deps: CreateUsageCliToolsDeps) {
         return false;
       },
     },
+    {
+      name: "hermes",
+      authHint: "Set HERMES_API_BASE_URL and HERMES_API_KEY",
+      checkInstalled: () => Boolean(process.env.HERMES_API_BASE_URL || process.env.HERMES_BASE_URL),
+      getVersion: () => "remote",
+      checkAuth: () => Boolean(process.env.HERMES_API_KEY || process.env.API_SERVER_KEY),
+    },
   ];
 
   const cachedCliStatus: { data: CliStatusResult; loadedAt: number } | null = null;
@@ -242,10 +249,16 @@ export function createUsageCliTools(deps: CreateUsageCliToolsDeps) {
 
   async function detectCliTool(tool: CliToolDef): Promise<CliToolStatus> {
     const whichCmd = process.platform === "win32" ? "where" : "which";
-    try {
-      await execWithTimeout(whichCmd, [tool.name], 3000);
-    } catch {
-      return { installed: false, version: null, authenticated: false, authHint: tool.authHint };
+    if (tool.checkInstalled) {
+      if (!tool.checkInstalled()) {
+        return { installed: false, version: null, authenticated: false, authHint: tool.authHint };
+      }
+    } else {
+      try {
+        await execWithTimeout(whichCmd, [tool.name], 3000);
+      } catch {
+        return { installed: false, version: null, authenticated: false, authHint: tool.authHint };
+      }
     }
 
     let version: string | null = null;

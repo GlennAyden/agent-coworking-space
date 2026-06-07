@@ -120,6 +120,7 @@ export function initializeWorkflowPartC(ctx: RuntimeContext): WorkflowOrchestrat
   const killPidTree = __ctx.killPidTree;
   const launchHttpAgent = __ctx.launchHttpAgent;
   const launchApiProviderAgent = __ctx.launchApiProviderAgent;
+  const launchHermesAgent = __ctx.launchHermesAgent;
   const mergeWorktree = __ctx.mergeWorktree;
   const mergeToDevAndCreatePR = __ctx.mergeToDevAndCreatePR;
   const normalizeOAuthProvider = __ctx.normalizeOAuthProvider;
@@ -465,6 +466,7 @@ export function initializeWorkflowPartC(ctx: RuntimeContext): WorkflowOrchestrat
     hasExplicitWarningFixRequest,
     getNextHttpAgentPid,
     launchApiProviderAgent,
+    launchHermesAgent,
     launchHttpAgent,
     getProviderModelConfig,
     spawnCliAgent,

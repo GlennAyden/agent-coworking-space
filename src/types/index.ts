@@ -21,7 +21,16 @@ export interface Department {
 // Agent roles
 export type AgentRole = "team_leader" | "senior" | "junior" | "intern";
 export type AgentStatus = "idle" | "working" | "break" | "offline";
-export type CliProvider = "claude" | "codex" | "gemini" | "opencode" | "kimi" | "copilot" | "antigravity" | "api";
+export type CliProvider =
+  | "claude"
+  | "codex"
+  | "gemini"
+  | "opencode"
+  | "kimi"
+  | "copilot"
+  | "antigravity"
+  | "api"
+  | "hermes";
 export type MeetingReviewDecision = "reviewing" | "approved" | "hold";
 
 export interface Agent {
@@ -405,6 +414,7 @@ export const DEFAULT_SETTINGS: CompanySettings = {
     opencode: { model: "github-copilot/claude-sonnet-4.6" },
     copilot: { model: "github-copilot/claude-sonnet-4.6" },
     antigravity: { model: "google/antigravity-gemini-3-pro" },
+    hermes: { model: "" },
   },
   messengerChannels: {
     telegram: { token: "", sessions: [], receiveEnabled: true },

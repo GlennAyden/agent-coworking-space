@@ -113,6 +113,7 @@ export function initializeWorkflowPartA(ctx: RuntimeContext): WorkflowCoreExport
   const executeCopilotAgent = (...args: any[]) => __ctx.executeCopilotAgent(...args);
   const executeAntigravityAgent = (...args: any[]) => __ctx.executeAntigravityAgent(...args);
   const executeApiProviderAgent = (...args: any[]) => __ctx.executeApiProviderAgent(...args);
+  const executeHermesAgent = (...args: any[]) => __ctx.executeHermesAgent(...args);
   const jsonHasKey = __ctx.jsonHasKey;
   const fileExistsNonEmpty = __ctx.fileExistsNonEmpty;
   const readClaudeToken = __ctx.readClaudeToken;
@@ -302,6 +303,7 @@ export function initializeWorkflowPartA(ctx: RuntimeContext): WorkflowCoreExport
     broadcast,
     getProviderModelConfig,
     executeApiProviderAgent,
+    executeHermesAgent,
     executeCopilotAgent,
     executeAntigravityAgent,
     killPidTree,

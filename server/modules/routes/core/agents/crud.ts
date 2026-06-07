@@ -318,11 +318,11 @@ export function registerAgentCrudRoutes(ctx: RuntimeContext): void {
         typeof body.role === "string" && ["team_leader", "senior", "junior", "intern"].includes(body.role)
           ? body.role
           : "junior";
-      const cli_provider =
-        typeof body.cli_provider === "string" &&
-        ["claude", "codex", "gemini", "opencode", "kimi", "copilot", "antigravity", "api"].includes(body.cli_provider)
-          ? body.cli_provider
-          : "claude";
+      const validCliProviders = ["claude", "codex", "gemini", "opencode", "kimi", "copilot", "antigravity", "api", "hermes"];
+      if (typeof body.cli_provider === "string" && !validCliProviders.includes(body.cli_provider)) {
+        return res.status(400).json({ error: "invalid_cli_provider" });
+      }
+      const cli_provider = typeof body.cli_provider === "string" ? body.cli_provider : "claude";
       const avatar_emoji =
         typeof body.avatar_emoji === "string" && body.avatar_emoji.trim() ? body.avatar_emoji.trim() : "🤖";
       const sprite_number =
@@ -457,7 +457,7 @@ export function registerAgentCrudRoutes(ctx: RuntimeContext): void {
     const nextProvider = nextProviderRaw ?? "claude";
     const nextOAuthProvider =
       nextProvider === "copilot" ? "github" : nextProvider === "antigravity" ? "google_antigravity" : null;
-    const supportsCliModelOverride = ["claude", "codex", "gemini", "opencode", "kimi"].includes(nextProvider);
+    const supportsCliModelOverride = ["claude", "codex", "gemini", "opencode", "kimi", "hermes"].includes(nextProvider);
     const supportsCliReasoningOverride = nextProvider === "codex";
     const providerChanged = "cli_provider" in body && nextProvider !== String(existing.cli_provider ?? "claude");
 

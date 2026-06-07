@@ -55,6 +55,7 @@ export interface RuntimeContextAutoAugmented {
   exchangeCopilotToken: any;
   executeApiProviderAgent: any;
   extractLatestProjectMemoBlock: any;
+  executeHermesAgent: any;
   fallbackTurnReply: any;
   fetchGeminiModels: any;
   fetchOpenCodeModels: any;
@@ -99,6 +100,7 @@ export interface RuntimeContextAutoAugmented {
   isMvpDeferralSignal: any;
   jsonHasKey: any;
   launchApiProviderAgent: any;
+  launchHermesAgent: any;
   linkCrossDeptTaskToParentSubtask: any;
   loadCodeAssistProject: any;
   loadRecentReviewRevisionMemoItems: any;

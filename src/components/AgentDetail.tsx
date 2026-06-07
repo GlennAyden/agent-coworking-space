@@ -32,7 +32,14 @@ interface AgentDetailProps {
   onAgentUpdated?: () => void;
 }
 
-const CLI_MODEL_OVERRIDE_PROVIDERS: Agent["cli_provider"][] = ["claude", "codex", "gemini", "opencode", "kimi"];
+const CLI_MODEL_OVERRIDE_PROVIDERS: Agent["cli_provider"][] = [
+  "claude",
+  "codex",
+  "gemini",
+  "opencode",
+  "kimi",
+  "hermes",
+];
 const CODEX_REASONING_FALLBACK_OPTIONS: ReasoningLevelOption[] = [
   { effort: "low", description: "Faster, lower depth" },
   { effort: "medium", description: "Balanced default" },

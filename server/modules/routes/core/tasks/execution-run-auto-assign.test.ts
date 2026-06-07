@@ -197,7 +197,13 @@ describe("selectAutoAssignableAgentForTask", () => {
   it("워크팩 프로필 에이전트가 있으면 런타임 후보를 해당 프로필로 제한한다", () => {
     const db = setupDb();
     try {
-      insertAgent(db, { id: "novel-pack-agent", name: "Novel Pack Agent", department_id: "design", created_at: 0 });
+      insertAgent(db, {
+        id: "novel-pack-agent",
+        name: "Novel Pack Agent",
+        department_id: "design",
+        cli_provider: "hermes",
+        created_at: 0,
+      });
       insertAgent(db, { id: "agent-global-design", name: "Global Designer", department_id: "design", created_at: 1 });
       insertAgent(db, { id: "agent-global-dev", name: "Global Dev", department_id: "dev", created_at: 2 });
       db.prepare("INSERT INTO settings (key, value) VALUES (?, ?)").run(
@@ -226,7 +232,7 @@ describe("selectAutoAssignableAgentForTask", () => {
                 name_zh: "小说包代理",
                 department_id: "design",
                 role: "senior",
-                cli_provider: "codex",
+                cli_provider: "hermes",
                 avatar_emoji: "🧪",
                 created_at: 5,
               },
@@ -248,6 +254,7 @@ describe("selectAutoAssignableAgentForTask", () => {
 
       expect(scope).toEqual(["novel-pack-agent"]);
       expect(selected?.agent.id).toBe("novel-pack-agent");
+      expect(selected?.agent.cli_provider).toBe("hermes");
     } finally {
       db.close();
     }

@@ -10,6 +10,7 @@ export const PROVIDER_ORDER: SkillHistoryProvider[] = [
   "copilot",
   "antigravity",
   "api",
+  "hermes",
 ];
 
 export const HISTORY_PREVIEW_COUNT = 3;
@@ -29,6 +30,7 @@ export function providerLabel(provider: SkillHistoryProvider): string {
   if (provider === "kimi") return "Kimi Code";
   if (provider === "copilot") return "GitHub Copilot";
   if (provider === "antigravity") return "Antigravity";
+  if (provider === "hermes") return "Hermes Agent";
   return "API Provider";
 }
 

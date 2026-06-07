@@ -87,6 +87,16 @@ interface SubtaskDelegationDeps {
     controller: AbortController,
     fakePid: number,
   ) => void;
+  launchHermesAgent: (
+    taskId: string,
+    prompt: string,
+    cwd: string,
+    logFilePath: string,
+    controller: AbortController,
+    fakePid: number,
+    model: string | null,
+    onComplete?: (exitCode: number) => void,
+  ) => void;
   launchHttpAgent: (
     taskId: string,
     provider: string,
@@ -140,6 +150,7 @@ export function initializeSubtaskDelegation(deps: SubtaskDelegationDeps) {
     spawnCliAgent,
     getNextHttpAgentPid,
     launchApiProviderAgent,
+    launchHermesAgent,
     launchHttpAgent,
     startProgressTimer,
     startTaskExecutionForAgent,
@@ -597,6 +608,7 @@ export function initializeSubtaskDelegation(deps: SubtaskDelegationDeps) {
     spawnCliAgent,
     getNextHttpAgentPid,
     launchApiProviderAgent,
+    launchHermesAgent,
     launchHttpAgent,
     startProgressTimer,
     subtaskDelegationCallbacks,

@@ -45,7 +45,7 @@ export function createReportWorkflowTools(deps: CreateReportWorkflowToolsDeps) {
   SELECT *
   FROM agents
   WHERE department_id = 'design'
-    AND COALESCE(cli_provider, '') IN ('claude','codex','gemini','opencode','kimi','copilot','antigravity','api')
+    AND COALESCE(cli_provider, '') IN ('claude','codex','gemini','opencode','kimi','copilot','antigravity','api','hermes')
   ORDER BY
     CASE status
       WHEN 'idle' THEN 0

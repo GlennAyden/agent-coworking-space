@@ -93,6 +93,16 @@ interface BatchDeps {
     controller: AbortController,
     fakePid: number,
   ) => void;
+  launchHermesAgent: (
+    taskId: string,
+    prompt: string,
+    cwd: string,
+    logFilePath: string,
+    controller: AbortController,
+    fakePid: number,
+    model: string | null,
+    onComplete?: (exitCode: number) => void,
+  ) => void;
   launchHttpAgent: (
     taskId: string,
     provider: string,
@@ -142,6 +152,7 @@ export function createSubtaskDelegationBatch(deps: BatchDeps) {
     spawnCliAgent,
     getNextHttpAgentPid,
     launchApiProviderAgent,
+    launchHermesAgent,
     launchHttpAgent,
     startProgressTimer,
     subtaskDelegationCallbacks,
@@ -444,7 +455,7 @@ export function createSubtaskDelegationBatch(deps: BatchDeps) {
       };
 
       const execProvider = execAgent.cli_provider || "claude";
-      if (["claude", "codex", "gemini", "opencode", "kimi", "copilot", "antigravity", "api"].includes(execProvider)) {
+      if (["claude", "codex", "gemini", "opencode", "kimi", "copilot", "antigravity", "api", "hermes"].includes(execProvider)) {
         let delegatedProcessStarted = false;
         try {
           const projPath = resolveProjectPath({
@@ -602,6 +613,27 @@ export function createSubtaskDelegationBatch(deps: BatchDeps) {
               delegatedProcessStarted = true;
             } catch (error) {
               failDelegatedLaunch(error, "api_provider_bootstrap");
+              return;
+            }
+          } else if (execProvider === "hermes") {
+            try {
+              wrapCallbackForHttpProvider();
+              const controller = new AbortController();
+              const fakePid = getNextHttpAgentPid();
+              const delegateModelConfig = getProviderModelConfig();
+              const delegateModel = execAgent.cli_model || delegateModelConfig[execProvider]?.model || undefined;
+              launchHermesAgent(
+                delegatedTaskId,
+                sessionPrompt,
+                agentCwd,
+                logFilePath,
+                controller,
+                fakePid,
+                delegateModel ?? null,
+              );
+              delegatedProcessStarted = true;
+            } catch (error) {
+              failDelegatedLaunch(error, "hermes_provider_bootstrap");
               return;
             }
           } else if (execProvider === "copilot" || execProvider === "antigravity") {
