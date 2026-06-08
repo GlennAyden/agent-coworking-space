@@ -60,6 +60,7 @@ export function buildOfficeScene(context: BuildOfficeSceneContext): void {
     breakBubblesRef,
     wallClocksRef,
     wallClockSecondRef,
+    coworkingSelectionRef,
     setSceneRevision,
   } = context;
 
@@ -197,6 +198,7 @@ export function buildOfficeScene(context: BuildOfficeSceneContext): void {
       subCloneAnimItemsRef,
       subCloneBurstParticlesRef,
       wallClocksRef,
+      coworkingSelection: coworkingSelectionRef.current,
       hiddenAgentIds: movingAgentIds,
       removedSubBurstsByParent,
       addedWorkingSubIds,

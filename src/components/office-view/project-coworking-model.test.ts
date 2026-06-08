@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Agent, Department, Project, Task } from "../../types";
-import { PROJECT_COWORKING_MIN_W, createProjectCoworkingLayout } from "./project-coworking-layout";
+import { BREAK_ROOM_H } from "./office-layout-constants";
+import { PROJECT_COWORKING_MIN_W, createProjectCoworkingLayout, getFloatingPanelRect } from "./project-coworking-layout";
 import { deriveProjectCoworkingSummary } from "./project-coworking-model";
 
 function makeDepartment(overrides: Partial<Department> = {}): Department {
@@ -222,7 +223,7 @@ describe("project coworking office model", () => {
     expect(summary.agentProjectAssignments).toHaveLength(8);
   });
 
-  it("uses the mockup-style wide layout with project rooms, center hub, and two-column commons", () => {
+  it("uses the mockup-style wide layout without reserving a permanent bottom command bar", () => {
     const departments = ["planning", "dev", "design", "qa", "devsecops", "ops"].map((id, index) =>
       makeDepartment({ id, name: id, sort_order: index + 1 }),
     );
@@ -246,6 +247,52 @@ describe("project coworking office model", () => {
     expect(layout.commonsCols).toBe(2);
     expect(layout.dispatchGateRect.x).toBeGreaterThan(layout.projectRoomStartX + layout.projectRoomW * 2);
     expect(layout.commonsRoomStartX).toBeGreaterThan(layout.dispatchGateRect.x + layout.dispatchGateRect.w);
-    expect(layout.bottomPanelRect.y).toBeGreaterThan(layout.projectStartY + layout.projectRoomH);
+    expect(layout.totalH).toBe(layout.breakRoomY + BREAK_ROOM_H + 30);
+    expect(layout.bottomPanelRect.y).toBeLessThan(layout.breakRoomY);
+  });
+
+  it("keeps the floating room context panel inside the coworking floorplan", () => {
+    const departments = ["planning", "dev", "design", "qa", "devsecops", "ops"].map((id, index) =>
+      makeDepartment({ id, name: id, sort_order: index + 1 }),
+    );
+    const projects = Array.from({ length: 3 }, (_, index) =>
+      makeProject({
+        id: `project-${index + 1}`,
+        name: `Project ${index + 1}`,
+        project_path: `C:\\Work\\Project-${index + 1}`,
+      }),
+    );
+    const layout = createProjectCoworkingLayout({
+      OFFICE_W: PROJECT_COWORKING_MIN_W,
+      projects,
+      tasks: [],
+      agents: [],
+      departments,
+    });
+
+    const leftRoom = {
+      x: layout.projectRoomStartX,
+      y: layout.projectStartY,
+      w: layout.projectRoomW,
+      h: layout.projectRoomH,
+    };
+    const rightCommons = {
+      x: layout.commonsRoomStartX + layout.commonsRoomW + 12,
+      y: layout.commonsStartY,
+      w: layout.commonsRoomW,
+      h: layout.commonsRoomH,
+    };
+
+    const leftPanel = getFloatingPanelRect(leftRoom, layout);
+    const rightPanel = getFloatingPanelRect(rightCommons, layout);
+
+    expect(leftPanel.x).toBeGreaterThan(leftRoom.x);
+    expect(rightPanel.x + rightPanel.w).toBeLessThan(rightCommons.x);
+    for (const panel of [leftPanel, rightPanel]) {
+      expect(panel.x).toBeGreaterThanOrEqual(12);
+      expect(panel.y).toBeGreaterThanOrEqual(12);
+      expect(panel.x + panel.w).toBeLessThanOrEqual(layout.officeW - 12);
+      expect(panel.y + panel.h).toBeLessThanOrEqual(layout.totalH - 12);
+    }
   });
 });

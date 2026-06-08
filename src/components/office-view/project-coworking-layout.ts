@@ -19,6 +19,7 @@ export interface CoworkingRoomLayout {
 
 export interface ProjectCoworkingLayout extends CoworkingRoomLayout {
   summary: ProjectCoworkingSummary;
+  officeW: number;
   totalH: number;
   breakRoomY: number;
   projectStartY: number;
@@ -80,12 +81,13 @@ export function createProjectCoworkingLayout({
       commonsStartY + commonsRows * (COMMONS_ROOM_H + ROOM_GAP),
       idleLobbyRect.y + idleLobbyRect.h,
     );
-    const bottomPanelRect = { x: edge, y: contentBottom + 26, w: OFFICE_W - edge * 2, h: 124 };
-    const breakRoomY = bottomPanelRect.y + bottomPanelRect.h + BREAK_ROOM_GAP;
+    const breakRoomY = contentBottom + BREAK_ROOM_GAP;
+    const bottomPanelRect = { x: edge + 16, y: Math.max(projectStartY + 24, breakRoomY - 146), w: Math.min(440, OFFICE_W - edge * 2 - 32), h: 132 };
     const totalH = breakRoomY + BREAK_ROOM_H + 30;
 
     return {
       summary,
+      officeW: OFFICE_W,
       totalH,
       breakRoomY,
       projectStartY,
@@ -128,11 +130,12 @@ export function createProjectCoworkingLayout({
   const idleLobbyRect = { x: OFFICE_W / 2 - 88, y: hubY + 82, w: 176, h: 78 };
   const commonsStartY = idleLobbyRect.y + idleLobbyRect.h + 34;
   const breakRoomY = commonsStartY + commonsRows * (COMMONS_ROOM_H + ROOM_GAP) + BREAK_ROOM_GAP;
-  const bottomPanelRect = { x: 12, y: breakRoomY + BREAK_ROOM_H + 24, w: OFFICE_W - 24, h: 124 };
-  const totalH = bottomPanelRect.y + bottomPanelRect.h + 30;
+  const bottomPanelRect = { x: 12, y: Math.max(projectStartY + 20, breakRoomY - 144), w: OFFICE_W - 24, h: 132 };
+  const totalH = breakRoomY + BREAK_ROOM_H + 30;
 
   return {
     summary,
+    officeW: OFFICE_W,
     totalH,
     breakRoomY,
     projectStartY,
@@ -153,4 +156,18 @@ export function createProjectCoworkingLayout({
       y: dispatchGateRect.y + dispatchGateRect.h / 2 + 18,
     },
   };
+}
+
+export function getFloatingPanelRect(anchor: Rect, layout: ProjectCoworkingLayout, desiredW = 560, desiredH = 142): Rect {
+  const margin = 12;
+  const w = Math.min(desiredW, layout.officeW - margin * 2);
+  const h = Math.min(desiredH, layout.totalH - margin * 2);
+  let x = anchor.x + anchor.w + 14;
+  if (x + w > layout.officeW - margin) x = anchor.x - w - 14;
+  if (x < margin) x = Math.min(Math.max(margin, layout.officeW - w - margin), Math.max(margin, anchor.x + 10));
+
+  let y = anchor.y + Math.min(22, Math.max(10, anchor.h * 0.18));
+  if (y + h > layout.totalH - margin) y = anchor.y - h - 12;
+  y = Math.max(margin, Math.min(layout.totalH - h - margin, y));
+  return { x, y, w, h };
 }

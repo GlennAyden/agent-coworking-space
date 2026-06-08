@@ -24,6 +24,7 @@ import {
   type MobileMoveDirection,
   type SubCloneBurstParticle,
 } from "./office-view/model";
+import { type CoworkingSelection } from "./office-view/buildScene-types";
 import { type SupportedLocale } from "./office-view/themes-locale";
 import { useCliUsage } from "./office-view/useCliUsage";
 import {
@@ -132,6 +133,9 @@ export default function OfficeView({
   localeRef.current = language;
   const themeHighlightTargetIdRef = useRef<string | null>(themeHighlightTargetId ?? null);
   themeHighlightTargetIdRef.current = themeHighlightTargetId ?? null;
+  const [coworkingSelection, setCoworkingSelection] = useState<CoworkingSelection | null>(null);
+  const coworkingSelectionRef = useRef<CoworkingSelection | null>(coworkingSelection);
+  coworkingSelectionRef.current = coworkingSelection;
 
   // Latest data via refs (avoids stale closures)
   const dataRef = useRef({
@@ -145,8 +149,32 @@ export default function OfficeView({
     customDeptThemes,
   });
   dataRef.current = { departments, agents, projects, tasks, subAgents, unreadAgentIds, meetingPresence, customDeptThemes };
-  const cbRef = useRef({ onSelectAgent, onSelectDepartment });
-  cbRef.current = { onSelectAgent, onSelectDepartment };
+  const handleSelectProjectRoom = useCallback((roomKey: string) => {
+    setCoworkingSelection({ type: "project", key: roomKey });
+  }, []);
+
+  const handleSelectDepartmentRoom = useCallback((roomKey: string) => {
+    setCoworkingSelection({ type: "department", key: roomKey });
+  }, []);
+
+  const handleClearCoworkingSelection = useCallback(() => {
+    setCoworkingSelection(null);
+  }, []);
+
+  const cbRef = useRef({
+    onSelectAgent,
+    onSelectDepartment,
+    onSelectProjectRoom: handleSelectProjectRoom,
+    onSelectDepartmentRoom: handleSelectDepartmentRoom,
+    onClearCoworkingSelection: handleClearCoworkingSelection,
+  });
+  cbRef.current = {
+    onSelectAgent,
+    onSelectDepartment,
+    onSelectProjectRoom: handleSelectProjectRoom,
+    onSelectDepartmentRoom: handleSelectDepartmentRoom,
+    onClearCoworkingSelection: handleClearCoworkingSelection,
+  };
   const activeMeetingTaskIdRef = useRef<string | null>(activeMeetingTaskId ?? null);
   activeMeetingTaskIdRef.current = activeMeetingTaskId ?? null;
   const meetingMinutesOpenRef = useRef<typeof onOpenActiveMeetingMinutes>(onOpenActiveMeetingMinutes);
@@ -302,9 +330,15 @@ export default function OfficeView({
       breakBubblesRef,
       wallClocksRef,
       wallClockSecondRef,
+      coworkingSelectionRef,
       setSceneRevision,
     });
   }, []);
+
+  useEffect(() => {
+    if (!initDoneRef.current || !appRef.current) return;
+    buildScene();
+  }, [buildScene, coworkingSelection]);
 
   const { cliStatus, cliUsage, cliUsageRef, refreshing, handleRefreshUsage } = useCliUsage(tasks);
 

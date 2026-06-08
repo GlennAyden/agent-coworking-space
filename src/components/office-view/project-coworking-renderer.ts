@@ -1,8 +1,8 @@
 import type { MutableRefObject } from "react";
-import { Container, Graphics, Text, TextStyle, type Application, type Texture } from "pixi.js";
+import { Container, Graphics, Rectangle, Text, TextStyle, type Application, type Texture } from "pixi.js";
 import type { Agent, Department, Project, SubAgent, Task } from "../../types";
 import { localeName } from "../../i18n";
-import type { AnimItem, CallbackSnapshot, SubCloneAnimItem } from "./buildScene-types";
+import type { AnimItem, CallbackSnapshot, CoworkingSelection, SubCloneAnimItem } from "./buildScene-types";
 import {
   ROOM_PAD,
   TARGET_CHAR_H,
@@ -36,6 +36,7 @@ import {
 } from "./project-coworking-model";
 import {
   createProjectCoworkingLayout,
+  getFloatingPanelRect,
   PROJECT_COWORKING_MIN_W,
   shouldUseProjectCoworking,
   type ProjectCoworkingLayout,
@@ -70,6 +71,7 @@ interface BuildProjectCoworkingRoomsParams {
   subCloneAnimItemsRef: MutableRefObject<SubCloneAnimItem[]>;
   subCloneBurstParticlesRef: MutableRefObject<SubCloneBurstParticle[]>;
   wallClocksRef: MutableRefObject<WallClockVisual[]>;
+  coworkingSelection?: CoworkingSelection | null;
   hiddenAgentIds?: Set<string>;
   removedSubBurstsByParent: Map<string, Array<{ x: number; y: number }>>;
   addedWorkingSubIds: Set<string>;
@@ -109,6 +111,7 @@ export function buildProjectCoworkingRooms({
   subCloneAnimItemsRef,
   subCloneBurstParticlesRef,
   wallClocksRef,
+  coworkingSelection,
   hiddenAgentIds,
   removedSubBurstsByParent,
   addedWorkingSubIds,
@@ -196,7 +199,19 @@ export function buildProjectCoworkingRooms({
   });
 
   drawCoworkingHub(app.stage, layout, isDark);
-  drawProjectCommandPanel(app.stage, layout, tasks, agentById, taskById, activeLocale, isDark);
+  drawCoworkingContextPanel(
+    app.stage,
+    layout,
+    projectRects,
+    commonsRects,
+    coworkingSelection ?? null,
+    tasks,
+    agentById,
+    taskById,
+    activeLocale,
+    isDark,
+    cbRef,
+  );
 }
 
 function renderProjectRoom({
@@ -246,6 +261,10 @@ function renderProjectRoom({
 }): void {
   const theme = projectTheme(roomSummary.key, index, isDark);
   const room = new Container();
+  room.eventMode = "static";
+  room.cursor = "pointer";
+  room.hitArea = new Rectangle(rect.x, rect.y, rect.w, rect.h);
+  room.on("pointerdown", () => cbRef.current.onSelectProjectRoom?.(roomSummary.key));
   drawRoomShell(room, rect, theme, true);
 
   drawProjectSign(room, rect, theme, roomSummary, isDark);
@@ -366,6 +385,10 @@ function renderDepartmentCommons({
     ? customThemes?.[commons.department.id] || DEPT_THEME[commons.department.id] || DEPT_THEME.dev
     : DEPT_THEME.dev;
   const room = new Container();
+  room.eventMode = "static";
+  room.cursor = commons.department ? "pointer" : "default";
+  room.hitArea = new Rectangle(rect.x, rect.y, rect.w, rect.h);
+  if (commons.department) room.on("pointerdown", () => cbRef.current.onSelectDepartmentRoom?.(commons.key));
   drawRoomShell(room, rect, theme, false);
   drawCommonsSign(room, rect, theme, commons, activeLocale, cbRef);
   drawCommonsDecor(room, rect, theme, index, wallClocksRef);
@@ -510,7 +533,7 @@ function drawCommonsSign(
   signBg.roundRect(rect.x + rect.w / 2 - signW / 2, rect.y - 4, signW, 20, 4).fill(theme.accent);
   signBg.eventMode = commons.department ? "static" : "none";
   signBg.cursor = commons.department ? "pointer" : "default";
-  if (commons.department) signBg.on("pointerdown", () => cbRef.current.onSelectDepartment(commons.department as Department));
+  if (commons.department) signBg.on("pointerdown", () => cbRef.current.onSelectDepartmentRoom?.(commons.key));
   room.addChild(signBg);
 
   const signTxt = new Text({
@@ -812,30 +835,49 @@ function drawMiniRoom(room: Container, rect: Rect, theme: RoomTheme, title: stri
   room.addChild(note);
 }
 
-function drawProjectCommandPanel(
+function drawCoworkingContextPanel(
   stage: Container,
   layout: ProjectCoworkingLayout,
+  projectRects: Map<string, Rect>,
+  commonsRects: Map<string, Rect>,
+  selection: CoworkingSelection | null,
   tasks: Task[],
   agentById: Map<string, Agent>,
   taskById: Map<string, Task>,
   activeLocale: SupportedLocale,
   isDark: boolean,
+  cbRef: MutableRefObject<CallbackSnapshot>,
 ): void {
-  const rect = layout.bottomPanelRect;
-  const room = layout.summary.projectRooms.find((projectRoom) => projectRoom.activeTaskIds.length > 0) ?? layout.summary.projectRooms[0];
-  if (!room) return;
+  if (!selection) return;
 
+  if (selection.type === "department") {
+    const commons = layout.summary.departmentCommons.find((room) => room.key === selection.key);
+    const anchorRect = commonsRects.get(selection.key);
+    if (!commons || !anchorRect) return;
+    drawDepartmentContextPanel(stage, layout, anchorRect, commons, tasks, agentById, activeLocale, isDark, cbRef);
+    return;
+  }
+
+  const room = layout.summary.projectRooms.find((projectRoom) => projectRoom.key === selection.key);
+  const anchorRect = projectRects.get(selection.key);
+  if (!room || !anchorRect) return;
+
+  const rect = getFloatingPanelRect(anchorRect, layout);
   const theme = projectTheme(room.key, hashStr(`${room.key}:panel`), isDark);
   const panel = new Container();
+  panel.eventMode = "static";
   const bg = new Graphics();
-  bg.roundRect(rect.x, rect.y, rect.w, rect.h, 6).fill({ color: isDark ? 0x17130d : 0xf4eadb, alpha: 0.96 });
-  bg.roundRect(rect.x, rect.y, rect.w, rect.h, 6).stroke({ width: 2, color: theme.wall, alpha: 0.72 });
+  bg.roundRect(rect.x + 3, rect.y + 4, rect.w, rect.h, 7).fill({ color: 0x000000, alpha: isDark ? 0.32 : 0.12 });
+  bg.roundRect(rect.x, rect.y, rect.w, rect.h, 7).fill({ color: isDark ? 0x17130d : 0xf4eadb, alpha: 0.97 });
+  bg.roundRect(rect.x, rect.y, rect.w, rect.h, 7).stroke({ width: 2, color: theme.wall, alpha: 0.72 });
   bg.roundRect(rect.x + 5, rect.y + 5, rect.w - 10, rect.h - 10, 4).stroke({
     width: 0.8,
     color: blendColor(theme.accent, 0xffffff, 0.34),
     alpha: 0.38,
   });
   panel.addChild(bg);
+  drawPanelPointer(panel, anchorRect, rect, theme.accent, isDark);
+  drawPanelClose(panel, rect, theme.accent, cbRef);
 
   const preview = { x: rect.x + 12, y: rect.y + 14, w: 142, h: rect.h - 28 };
   drawTiledFloor(bg, preview.x, preview.y, preview.w, preview.h, theme.floor1, theme.floor2);
@@ -891,12 +933,130 @@ function drawProjectCommandPanel(
     return;
   }
 
-  drawInfoBlock(panel, rect.x + rect.w * 0.42, rect.y + 18, 156, "CURRENT TASK", currentTask?.title ?? "Waiting for assignment");
-  drawAssignedAgents(panel, rect.x + rect.w * 0.58, rect.y + 18, room.agentIds, agentById, activeLocale, theme.accent);
-  drawTerminalPreview(panel, rect.x + rect.w * 0.74, rect.y + 18, 156, rect.h - 36, room, currentTask);
-  drawQuickActions(panel, rect.x + rect.w - 116, rect.y + 18, 96, rect.h - 36, theme.accent);
+  drawInfoBlock(panel, titleX, rect.y + 74, 190, "CURRENT TASK", currentTask?.title ?? "Waiting for assignment");
+  drawAssignedAgents(panel, rect.x + rect.w - 164, rect.y + 18, room.agentIds, agentById, activeLocale, theme.accent);
 
   stage.addChild(panel);
+}
+
+function drawDepartmentContextPanel(
+  stage: Container,
+  layout: ProjectCoworkingLayout,
+  anchorRect: Rect,
+  commons: DepartmentCommonsSummary,
+  tasks: Task[],
+  agentById: Map<string, Agent>,
+  activeLocale: SupportedLocale,
+  isDark: boolean,
+  cbRef: MutableRefObject<CallbackSnapshot>,
+): void {
+  const baseTheme = commons.department
+    ? DEPT_THEME[commons.department.id] || DEPT_THEME.dev
+    : DEPT_THEME.dev;
+  const theme = {
+    ...baseTheme,
+    floor1: isDark ? blendColor(baseTheme.floor1, 0x000000, 0.72) : baseTheme.floor1,
+    floor2: isDark ? blendColor(baseTheme.floor2, 0x000000, 0.72) : baseTheme.floor2,
+    wall: isDark ? blendColor(baseTheme.wall, 0xffffff, 0.18) : baseTheme.wall,
+    accent: baseTheme.accent,
+  };
+  const rect = getFloatingPanelRect(anchorRect, layout, 470, 136);
+  const panel = new Container();
+  panel.eventMode = "static";
+  const bg = new Graphics();
+  bg.roundRect(rect.x + 3, rect.y + 4, rect.w, rect.h, 7).fill({ color: 0x000000, alpha: isDark ? 0.34 : 0.12 });
+  bg.roundRect(rect.x, rect.y, rect.w, rect.h, 7).fill({ color: isDark ? 0x121617 : 0xf7efe3, alpha: 0.97 });
+  bg.roundRect(rect.x, rect.y, rect.w, rect.h, 7).stroke({ width: 2, color: theme.wall, alpha: 0.74 });
+  bg.roundRect(rect.x + 5, rect.y + 5, rect.w - 10, rect.h - 10, 4).stroke({
+    width: 0.8,
+    color: blendColor(theme.accent, 0xffffff, 0.34),
+    alpha: 0.38,
+  });
+  panel.addChild(bg);
+  drawPanelPointer(panel, anchorRect, rect, theme.accent, isDark);
+  drawPanelClose(panel, rect, theme.accent, cbRef);
+
+  const preview = { x: rect.x + 12, y: rect.y + 14, w: 118, h: rect.h - 28 };
+  drawTiledFloor(bg, preview.x, preview.y, preview.w, preview.h, theme.floor1, theme.floor2);
+  bg.roundRect(preview.x, preview.y, preview.w, preview.h, 4).stroke({ width: 1.6, color: theme.wall, alpha: 0.9 });
+  drawSofa(panel, preview.x + 18, preview.y + 44, theme.accent);
+  drawCoffeeTable(panel, preview.x + preview.w / 2 - 18, preview.y + 58);
+  drawWhiteboard(panel, preview.x + preview.w - 38, preview.y + 13);
+  drawPlant(panel, preview.x + 11, preview.y + preview.h - 13, 2);
+
+  const titleX = rect.x + 148;
+  const title = new Text({
+    text: truncate(`${commons.department ? localeName(activeLocale, commons.department) : "Unassigned"} Commons`.toUpperCase(), 26),
+    style: new TextStyle({
+      fontSize: 14,
+      fill: isDark ? 0xf2ebdf : 0x2e251b,
+      fontWeight: "bold",
+      fontFamily: "system-ui, sans-serif",
+    }),
+  });
+  title.position.set(titleX, rect.y + 18);
+  panel.addChild(title);
+  drawStatusPill(panel, titleX, rect.y + 42, "COMMONS", theme.accent);
+
+  const deptTasks = tasks.filter((task) => task.department_id === commons.departmentId);
+  const activeDeptTasks = deptTasks.filter((task) => task.status !== "done" && task.status !== "cancelled");
+  drawInfoBlock(
+    panel,
+    titleX,
+    rect.y + 64,
+    170,
+    "ROOM STATUS",
+    `${commons.agentIds.length} agents, ${activeDeptTasks.length} active tasks`,
+  );
+  drawAssignedAgents(panel, rect.x + rect.w - 164, rect.y + 18, commons.agentIds, agentById, activeLocale, theme.accent);
+
+  stage.addChild(panel);
+}
+
+function drawPanelPointer(panel: Container, anchor: Rect, rect: Rect, accent: number, isDark: boolean): void {
+  const anchorCenter = { x: anchor.x + anchor.w / 2, y: anchor.y + anchor.h / 2 };
+  const panelCenter = { x: rect.x + rect.w / 2, y: rect.y + rect.h / 2 };
+  const pointer = new Graphics();
+  if (panelCenter.x > anchorCenter.x) {
+    const y = Math.max(rect.y + 18, Math.min(rect.y + rect.h - 18, anchorCenter.y));
+    pointer.moveTo(rect.x, y - 9).lineTo(rect.x - 12, y).lineTo(rect.x, y + 9).fill({
+      color: isDark ? 0x17130d : 0xf4eadb,
+      alpha: 0.97,
+    });
+  } else {
+    const y = Math.max(rect.y + 18, Math.min(rect.y + rect.h - 18, anchorCenter.y));
+    pointer.moveTo(rect.x + rect.w, y - 9).lineTo(rect.x + rect.w + 12, y).lineTo(rect.x + rect.w, y + 9).fill({
+      color: isDark ? 0x17130d : 0xf4eadb,
+      alpha: 0.97,
+    });
+  }
+  pointer.stroke({ width: 1, color: accent, alpha: 0.3 });
+  panel.addChild(pointer);
+}
+
+function drawPanelClose(panel: Container, rect: Rect, accent: number, cbRef: MutableRefObject<CallbackSnapshot>): void {
+  const close = new Container();
+  close.eventMode = "static";
+  close.cursor = "pointer";
+  const cx = rect.x + rect.w - 18;
+  const cy = rect.y + 18;
+  close.hitArea = new Rectangle(cx - 14, cy - 14, 28, 28);
+  close.on("pointerdown", (event) => {
+    event.stopPropagation();
+    cbRef.current.onClearCoworkingSelection?.();
+  });
+  const bg = new Graphics();
+  bg.circle(cx, cy, 9).fill({ color: 0xffffff, alpha: 0.78 });
+  bg.circle(cx, cy, 9).stroke({ width: 1, color: accent, alpha: 0.55 });
+  close.addChild(bg);
+  const label = new Text({
+    text: "x",
+    style: new TextStyle({ fontSize: 11, fill: 0x4a3b2e, fontWeight: "bold", fontFamily: "system-ui, sans-serif" }),
+  });
+  label.anchor.set(0.5, 0.5);
+  label.position.set(cx, cy - 0.5);
+  close.addChild(label);
+  panel.addChild(close);
 }
 
 function drawStatusPill(panel: Container, x: number, y: number, text: string, accent: number): void {

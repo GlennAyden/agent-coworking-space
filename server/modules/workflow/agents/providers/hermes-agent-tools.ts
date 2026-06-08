@@ -361,6 +361,7 @@ export function createHermesAgentTools(deps: CreateHermesAgentToolsDeps) {
 
     const requestBody: Record<string, unknown> = {
       input: prompt,
+      project_path: effectiveProjectPath,
       session_id: taskId ? `agent-coworking-space-${taskId}` : undefined,
       instructions: [
         "You are executing an Agent Coworking Space task through Hermes Agent.",

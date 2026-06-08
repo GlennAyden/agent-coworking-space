@@ -20,7 +20,14 @@ export interface DataSnapshot {
 export interface CallbackSnapshot {
   onSelectAgent: (agent: Agent) => void;
   onSelectDepartment: (dept: Department) => void;
+  onSelectProjectRoom?: (roomKey: string) => void;
+  onSelectDepartmentRoom?: (roomKey: string) => void;
+  onClearCoworkingSelection?: () => void;
 }
+
+export type CoworkingSelection =
+  | { type: "project"; key: string }
+  | { type: "department"; key: string };
 
 export interface AnimItem {
   sprite: Container;
@@ -88,5 +95,6 @@ export interface BuildOfficeSceneContext {
   breakBubblesRef: MutableRefObject<Container[]>;
   wallClocksRef: MutableRefObject<WallClockVisual[]>;
   wallClockSecondRef: MutableRefObject<number>;
+  coworkingSelectionRef: MutableRefObject<CoworkingSelection | null>;
   setSceneRevision: Dispatch<SetStateAction<number>>;
 }

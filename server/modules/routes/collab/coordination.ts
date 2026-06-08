@@ -178,6 +178,11 @@ export function initializeCollabCoordination(ctx: RuntimeContext): any {
         .get(projectId) as { project_path: string | null } | undefined;
       const canonical = String(row?.project_path ?? "").trim();
       if (canonical) {
+        try {
+          if (fs.statSync(canonical).isDirectory()) return canonical;
+        } catch {
+          // Fall through to legacy path detection for shorthand project references.
+        }
         const detectedCanonical = detectProjectPath(canonical);
         return detectedCanonical || canonical;
       }
@@ -185,6 +190,11 @@ export function initializeCollabCoordination(ctx: RuntimeContext): any {
 
     const taskProjectPath = String(task.project_path ?? "").trim();
     if (taskProjectPath) {
+      try {
+        if (fs.statSync(taskProjectPath).isDirectory()) return taskProjectPath;
+      } catch {
+        // Fall through to legacy path detection for shorthand project references.
+      }
       const detectedTaskPath = detectProjectPath(taskProjectPath);
       return detectedTaskPath || taskProjectPath;
     }
