@@ -9,6 +9,11 @@ import {
   consumeInterruptPrompts,
   loadPendingInterruptPrompts,
 } from "../core/interrupt-injection-tools.ts";
+import {
+  buildApprovalWorkflowMeta,
+  detectRiskyTaskReasons,
+  formatApprovalGateLog,
+} from "../../routes/core/tasks/approval-gate.ts";
 
 type CreateExecutionStartTaskToolsDeps = {
   nowMs: RuntimeContext["nowMs"];
@@ -76,6 +81,59 @@ export function createExecutionStartTaskTools(deps: CreateExecutionStartTaskTool
   } = deps;
 
   function startTaskExecutionForAgent(taskId: string, execAgent: any, deptId: string | null, deptName: string): void {
+    const approvalTaskData = db.prepare("SELECT title, description, workflow_meta_json, task_type FROM tasks WHERE id = ?").get(
+      taskId,
+    ) as
+      | {
+          title: string;
+          description: string | null;
+          workflow_meta_json: string | null;
+          task_type: string | null;
+        }
+      | undefined;
+    if (!approvalTaskData) return;
+
+    const approvalReasons = detectRiskyTaskReasons({
+      title: approvalTaskData.title,
+      description: approvalTaskData.description,
+      workflowMetaJson: approvalTaskData.workflow_meta_json,
+      taskType: approvalTaskData.task_type,
+    });
+    if (approvalReasons.length > 0) {
+      const approvalAt = nowMs();
+      const workflowMetaJson = buildApprovalWorkflowMeta(approvalTaskData.workflow_meta_json, approvalReasons);
+      db.prepare(
+        "UPDATE tasks SET status = 'pending', assigned_agent_id = ?, workflow_meta_json = ?, started_at = NULL, updated_at = ? WHERE id = ?",
+      ).run(execAgent.id, workflowMetaJson, approvalAt, taskId);
+      appendTaskLog(taskId, "system", formatApprovalGateLog(approvalReasons));
+      broadcast("task_update", db.prepare("SELECT * FROM tasks WHERE id = ?").get(taskId));
+      broadcast("agent_status", db.prepare("SELECT * FROM agents WHERE id = ?").get(execAgent.id));
+
+      const taskLang = resolveLang(approvalTaskData.description ?? approvalTaskData.title);
+      notifyTaskStatus(taskId, approvalTaskData.title, "pending", taskLang);
+      notifyCeo(
+        pickL(
+          l(
+            [
+              `[APPROVAL REQUIRED] '${approvalTaskData.title}' execution is pending CEO approval before any risky action starts.`,
+            ],
+            [
+              `[APPROVAL REQUIRED] '${approvalTaskData.title}' execution is pending CEO approval before any risky action starts.`,
+            ],
+            [
+              `[APPROVAL REQUIRED] '${approvalTaskData.title}' execution is pending CEO approval before any risky action starts.`,
+            ],
+            [
+              `[APPROVAL REQUIRED] '${approvalTaskData.title}' execution is pending CEO approval before any risky action starts.`,
+            ],
+          ),
+          taskLang,
+        ),
+        taskId,
+      );
+      return;
+    }
+
     const execName = execAgent.name_ko || execAgent.name;
     const t = nowMs();
     db.prepare(

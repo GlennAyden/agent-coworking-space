@@ -197,11 +197,15 @@ export function useAppActions({
   );
 
   const handleRunTask = useCallback(
-    async (id: string) => {
+    async (id: string, options?: api.RunTaskOptions) => {
       try {
-        await api.runTask(id);
+        await api.runTask(id, options);
         await refreshTasksAndAgents();
       } catch (error) {
+        if (api.isApprovalRequiredError(error)) {
+          await refreshTasksAndAgents();
+          throw error;
+        }
         console.error("Run task failed:", error);
       }
     },

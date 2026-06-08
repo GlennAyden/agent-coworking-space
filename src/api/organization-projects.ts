@@ -1,4 +1,4 @@
-import { bootstrapSession, del, patch, post, request } from "./core";
+import { ApiRequestError, bootstrapSession, del, patch, post, request } from "./core";
 
 import type {
   Agent,
@@ -266,8 +266,54 @@ export async function assignTask(id: string, agentId: string): Promise<void> {
   await post(`/api/tasks/${id}/assign`, { agent_id: agentId });
 }
 
-export async function runTask(id: string): Promise<void> {
-  await post(`/api/tasks/${id}/run`);
+export interface RunTaskOptions {
+  approval_confirmed?: boolean;
+}
+
+export interface ApprovalRequiredDetails {
+  error: "approval_required";
+  reasons: string[];
+  approval_confirmed_field: "approval_confirmed" | string;
+}
+
+export class ApprovalRequiredError extends Error {
+  details: ApprovalRequiredDetails;
+
+  constructor(details: ApprovalRequiredDetails) {
+    super("approval_required");
+    this.name = "ApprovalRequiredError";
+    this.details = details;
+  }
+}
+
+function isApprovalRequiredPayload(details: unknown): details is ApprovalRequiredDetails {
+  if (!details || typeof details !== "object") return false;
+  const payload = details as {
+    error?: unknown;
+    reasons?: unknown;
+    approval_confirmed_field?: unknown;
+  };
+  return (
+    payload.error === "approval_required" &&
+    Array.isArray(payload.reasons) &&
+    payload.reasons.every((reason) => typeof reason === "string") &&
+    typeof payload.approval_confirmed_field === "string"
+  );
+}
+
+export function isApprovalRequiredError(error: unknown): error is ApprovalRequiredError {
+  return error instanceof ApprovalRequiredError;
+}
+
+export async function runTask(id: string, options?: RunTaskOptions): Promise<void> {
+  try {
+    await post(`/api/tasks/${id}/run`, options);
+  } catch (error) {
+    if (error instanceof ApiRequestError && error.status === 428 && isApprovalRequiredPayload(error.details)) {
+      throw new ApprovalRequiredError(error.details);
+    }
+    throw error;
+  }
 }
 
 export async function stopTask(id: string): Promise<void> {

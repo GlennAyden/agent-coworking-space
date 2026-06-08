@@ -11,6 +11,13 @@ import {
   consumeInterruptPrompts,
   loadPendingInterruptPrompts,
 } from "../../../workflow/core/interrupt-injection-tools.ts";
+import {
+  buildApprovalWorkflowMeta,
+  clearApprovalRequiredWorkflowMeta,
+  detectRiskyTaskReasons,
+  formatApprovalGateLog,
+  isApprovalConfirmed,
+} from "./approval-gate.ts";
 
 export type TaskRunRouteDeps = Pick<
   RuntimeContext,
@@ -97,8 +104,10 @@ export function registerTaskRunRoute(deps: TaskRunRouteDeps): void {
           department_id: string | null;
           project_id: string | null;
           workflow_pack_key: string | null;
+          workflow_meta_json: string | null;
           project_path: string | null;
           status: string;
+          task_type: string | null;
         }
       | undefined;
     if (!task) return res.status(404).json({ error: "not_found" });
@@ -290,6 +299,42 @@ export function registerTaskRunRoute(deps: TaskRunRouteDeps): void {
     const provider = agent.cli_provider || "claude";
     if (!["claude", "codex", "gemini", "opencode", "kimi", "copilot", "antigravity", "api", "hermes"].includes(provider)) {
       return res.status(400).json({ error: "unsupported_provider", provider });
+    }
+
+    const approvalReasons = detectRiskyTaskReasons({
+      title: task.title,
+      description: task.description,
+      workflowMetaJson: task.workflow_meta_json,
+      taskType: task.task_type,
+    });
+    if (approvalReasons.length > 0 && !isApprovalConfirmed(req.body)) {
+      const approvalAt = nowMs();
+      const workflowMetaJson = buildApprovalWorkflowMeta(task.workflow_meta_json, approvalReasons);
+      db.prepare("UPDATE tasks SET status = 'pending', workflow_meta_json = ?, updated_at = ? WHERE id = ?").run(
+        workflowMetaJson,
+        approvalAt,
+        id,
+      );
+      appendTaskLog(id, "system", formatApprovalGateLog(approvalReasons));
+      const updatedTask = db.prepare("SELECT * FROM tasks WHERE id = ?").get(id);
+      broadcast("task_update", updatedTask);
+      notifyTaskStatus(id, task.title, "pending", taskLang);
+      return res.status(428).json({
+        error: "approval_required",
+        message: "CEO approval required before running this task.",
+        reasons: approvalReasons,
+        approval_confirmed_field: "approval_confirmed",
+      });
+    }
+    if (approvalReasons.length > 0) {
+      const approvedMetaJson = clearApprovalRequiredWorkflowMeta(task.workflow_meta_json);
+      db.prepare("UPDATE tasks SET workflow_meta_json = ?, updated_at = ? WHERE id = ?").run(
+        approvedMetaJson,
+        nowMs(),
+        id,
+      );
+      appendTaskLog(id, "system", `Approval gate: CEO approved risky execution. Reasons: ${approvalReasons.join("; ")}`);
+      task.workflow_meta_json = approvedMetaJson;
     }
     ensureVideoPreprodRemotionBestPracticesSkill({
       db: db as any,

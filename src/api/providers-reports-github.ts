@@ -188,6 +188,28 @@ export interface TaskReportTeamSection {
   }>;
 }
 
+export interface TaskReportRemoteRun {
+  provider: string;
+  remote_run_id: string | null;
+  status: string | null;
+  base_url: string | null;
+  last_event?: string | null;
+  error?: string | null;
+  created_at?: number | null;
+  updated_at?: number | null;
+}
+
+export interface TaskReportArtifactSummary {
+  artifact_count?: number | null;
+  document_count?: number | null;
+  artifacts_count?: number | null;
+  documents_count?: number | null;
+  artifacts?: unknown[] | null;
+  documents?: unknown[] | null;
+  verification_highlights?: string[] | null;
+  log_highlights?: string[] | null;
+}
+
 export interface TaskReportDetail {
   ok?: boolean;
   requested_task_id?: string;
@@ -229,6 +251,8 @@ export interface TaskReportDetail {
     documents: TaskReportDocument[];
   };
   team_reports?: TaskReportTeamSection[];
+  remote_runs?: TaskReportRemoteRun[];
+  artifact_summary?: TaskReportArtifactSummary | null;
 }
 
 // ── Active Agents ────────────────────────────────────────────────────────────

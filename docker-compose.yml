@@ -1,21 +1,23 @@
 services:
-  claw-empire:
+  agent-coworking-space:
     build:
       context: .
       dockerfile: Dockerfile
       args:
         APP_UID: 10001
         APP_GID: 10001
-    container_name: claw-empire
+    container_name: agent-coworking-space
     restart: unless-stopped
     env_file:
       - .env.docker
       - .env.docker.private
     environment:
-      DB_PATH: /app/data/claw-empire.sqlite
+      HOST: 0.0.0.0
+      DB_PATH: /app/data/agent-coworking-space.sqlite
       LOGS_DIR: /app/data/logs
+      BACKUP_DIR: /app/data/backups
     ports:
-      - "8790:8790"
+      - "127.0.0.1:8790:8790"
     volumes:
       - ./data:/app/data
     working_dir: /app

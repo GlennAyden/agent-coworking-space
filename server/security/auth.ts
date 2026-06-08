@@ -6,6 +6,7 @@ import type { IncomingMessage } from "node:http";
 import {
   ALLOWED_ORIGINS,
   ALLOWED_ORIGIN_SUFFIXES,
+  PUBLIC_API_DOCS,
   SESSION_AUTH_TOKEN,
   SESSION_COOKIE_NAME,
 } from "../config/runtime.ts";
@@ -133,8 +134,8 @@ export function isPublicApiPath(pathname: string): boolean {
   if (pathname === "/api/health") return true;
   if (pathname === "/api/auth/session") return true;
   if (pathname === "/api/inbox") return true;
-  if (pathname === "/api/openapi.json") return true;
-  if (pathname === "/api/docs" || pathname.startsWith("/api/docs/")) return true;
+  if (PUBLIC_API_DOCS && pathname === "/api/openapi.json") return true;
+  if (PUBLIC_API_DOCS && (pathname === "/api/docs" || pathname.startsWith("/api/docs/"))) return true;
   if (pathname === "/api/oauth/start") return true;
   if (pathname.startsWith("/api/oauth/callback/")) return true;
   return false;

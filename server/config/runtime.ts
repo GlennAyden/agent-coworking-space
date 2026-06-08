@@ -79,6 +79,7 @@ export const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS ?? "")
   .split(",")
   .map((v) => v.trim())
   .filter(Boolean);
+export const PUBLIC_API_DOCS = /^(1|true|yes|on)$/i.test((process.env.PUBLIC_API_DOCS ?? "").trim());
 
 // ---------------------------------------------------------------------------
 // Production static file serving

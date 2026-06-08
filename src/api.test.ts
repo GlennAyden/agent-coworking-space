@@ -157,6 +157,42 @@ describe("api client", () => {
     });
   });
 
+  it("runTask sends explicit approval confirmation when provided", async () => {
+    const fetchMock = vi.fn();
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }, 200));
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    const api = await import("./api");
+    await api.runTask("task-1", { approval_confirmed: true });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/tasks/task-1/run");
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined;
+    expect(init?.method).toBe("POST");
+    expect(JSON.parse(String(init?.body))).toEqual({ approval_confirmed: true });
+  });
+
+  it("runTask exposes approval_required details to callers", async () => {
+    const fetchMock = vi.fn();
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          error: "approval_required",
+          reasons: ["Production restart can interrupt users"],
+          approval_confirmed_field: "approval_confirmed",
+        },
+        428,
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    const api = await import("./api");
+    await expect(api.runTask("task-1")).rejects.toSatisfy((error: unknown) => {
+      if (!api.isApprovalRequiredError(error)) return false;
+      return error.details.reasons[0] === "Production restart can interrupt users";
+    });
+  });
+
   it("getAllProjects reads every paginated project page", async () => {
     const fetchMock = vi.fn();
     fetchMock

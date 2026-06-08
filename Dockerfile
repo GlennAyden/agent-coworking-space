@@ -39,4 +39,4 @@ USER app
 
 EXPOSE 8790
 
-CMD ["pnpm", "start:tailscale"]
+CMD ["pnpm", "run", "start:prod"]

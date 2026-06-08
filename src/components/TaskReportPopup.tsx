@@ -1,6 +1,12 @@
 import { useMemo, useState, useEffect } from "react";
 import type { Agent, Department } from "../types";
-import type { TaskReportDetail, TaskReportDocument, TaskReportTeamSection } from "../api";
+import type {
+  TaskReportArtifactSummary,
+  TaskReportDetail,
+  TaskReportDocument,
+  TaskReportRemoteRun,
+  TaskReportTeamSection,
+} from "../api";
 import { archiveTaskReport, getTaskReportDetail } from "../api";
 import type { UiLanguage } from "../i18n";
 import { pickLang } from "../i18n";
@@ -45,6 +51,54 @@ function statusClass(status: string): string {
   if (status === "review") return "bg-blue-500/15 text-blue-300";
   if (status === "in_progress") return "bg-amber-500/15 text-amber-300";
   return "bg-slate-700/70 text-slate-300";
+}
+
+function safeOrigin(value: string | null | undefined): string {
+  if (!value) return "-";
+  try {
+    const url = new URL(value);
+    return `${url.protocol}//${url.host}`;
+  } catch {
+    const trimmed = value.trim();
+    if (!trimmed) return "-";
+    const withoutCredentials = trimmed.replace(/^[a-z][a-z0-9+.-]*:\/\/[^@\s/]+@/i, "");
+    const hostLike = withoutCredentials.split(/[/?#\s]/)[0] ?? "";
+    return hostLike && !hostLike.includes("=") ? hostLike : "configured endpoint";
+  }
+}
+
+function shortId(value: string | null | undefined): string {
+  if (!value) return "-";
+  if (value.length <= 18) return value;
+  return `${value.slice(0, 8)}...${value.slice(-6)}`;
+}
+
+function maskSensitiveText(value: string): string {
+  return value
+    .replace(/(authorization:\s*bearer\s+)[^\s,;]+/gi, "$1[redacted]")
+    .replace(/((?:api[_-]?key|token|secret|password)=)[^&\s]+/gi, "$1[redacted]")
+    .replace(/([?&](?:key|token|secret|password)=)[^&\s]+/gi, "$1[redacted]");
+}
+
+function countFromSummary(summary: TaskReportArtifactSummary | null | undefined, singular: "artifact" | "document"): number {
+  const direct = singular === "artifact" ? summary?.artifact_count ?? summary?.artifacts_count : summary?.document_count ?? summary?.documents_count;
+  if (typeof direct === "number" && Number.isFinite(direct)) return direct;
+  const collection = singular === "artifact" ? summary?.artifacts : summary?.documents;
+  return Array.isArray(collection) ? collection.length : 0;
+}
+
+function evidenceHighlights(summary: TaskReportArtifactSummary | null | undefined, logs: TaskReportDetail["logs"]): string[] {
+  const fromSummary = [
+    ...(summary?.verification_highlights ?? []),
+    ...(summary?.log_highlights ?? []),
+  ]
+    .filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0)
+    .map(maskSensitiveText);
+  if (fromSummary.length > 0) return fromSummary.slice(0, 5);
+  return (logs ?? [])
+    .filter((log) => /artifact|verified|verification|remote run|hermes|report/i.test(log.message))
+    .slice(-5)
+    .map((log) => maskSensitiveText(log.message));
 }
 
 export default function TaskReportPopup({ report, agents, departments, uiLanguage, onClose }: TaskReportPopupProps) {
@@ -209,6 +263,96 @@ export default function TaskReportPopup({ report, agents, departments, uiLanguag
             </button>
           </div>
         )}
+      </div>
+    );
+  };
+
+  const renderExecutionEvidence = () => {
+    const remoteRuns: TaskReportRemoteRun[] = currentReport.remote_runs ?? [];
+    const artifactSummary = currentReport.artifact_summary ?? null;
+    const artifactCount = countFromSummary(artifactSummary, "artifact");
+    const documentCount = countFromSummary(artifactSummary, "document");
+    const highlights = evidenceHighlights(artifactSummary, currentReport.logs);
+    if (remoteRuns.length === 0 && !artifactSummary) return null;
+
+    return (
+      <div className="border-b border-slate-700/40 px-6 py-3">
+        <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-3">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-cyan-200">
+                {t({
+                  ko: "ì‹¤í–‰ ì¦ë¹™",
+                  en: "Execution Evidence",
+                  ja: "å®Ÿè¡Œã‚¨ãƒ“ãƒ‡ãƒ³ã‚¹",
+                  zh: "执行证据",
+                })}
+              </p>
+              <p className="mt-0.5 text-[11px] text-cyan-100/70">
+                {t({
+                  ko: "ì™¸ë¶€ runnerì™€ ì‚°ì¶œë¬¼ ê²€ì¦ ìš”ì•½",
+                  en: "Remote runner and artifact verification summary",
+                  ja: "å¤–éƒ¨ runner ã¨æˆæžœç‰©æ¤œè¨¼ã®ã‚µãƒžãƒªãƒ¼",
+                  zh: "远程运行器和产物验证摘要",
+                })}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-[11px]">
+              <span className="rounded-full bg-slate-950/40 px-2 py-1 text-slate-200">
+                {artifactCount} {t({ ko: "ì‚°ì¶œë¬¼", en: "artifacts", ja: "æˆæžœç‰©", zh: "产物" })}
+              </span>
+              <span className="rounded-full bg-slate-950/40 px-2 py-1 text-slate-200">
+                {documentCount} {t({ ko: "ë¬¸ì„œ", en: "documents", ja: "æ–‡æ›¸", zh: "文档" })}
+              </span>
+            </div>
+          </div>
+
+          {remoteRuns.length > 0 && (
+            <div className="grid gap-2 md:grid-cols-2">
+              {remoteRuns.map((run, index) => (
+                <div
+                  key={`${run.provider}-${run.remote_run_id ?? index}`}
+                  className="rounded-lg border border-slate-700/60 bg-slate-900/70 p-2.5"
+                >
+                  <div className="mb-1 flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-slate-100">{run.provider || "runner"}</span>
+                    <span className={`rounded px-1.5 py-0.5 text-[10px] ${statusClass(run.status ?? "")}`}>
+                      {run.status || "-"}
+                    </span>
+                  </div>
+                  <div className="space-y-0.5 text-[11px] text-slate-400">
+                    <p>
+                      <span className="text-slate-500">run</span> {shortId(run.remote_run_id)}
+                    </p>
+                    <p>
+                      <span className="text-slate-500">origin</span> {safeOrigin(run.base_url)}
+                    </p>
+                    {run.last_event && (
+                      <p>
+                        <span className="text-slate-500">event</span> {maskSensitiveText(run.last_event)}
+                      </p>
+                    )}
+                    {run.error && (
+                      <p className="text-rose-300">
+                        <span className="text-rose-400/70">error</span> {maskSensitiveText(run.error)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {highlights.length > 0 && (
+            <div className="mt-3 space-y-1.5">
+              {highlights.map((highlight, index) => (
+                <div key={`${highlight}-${index}`} className="rounded bg-slate-950/35 px-2 py-1.5 text-[11px] text-slate-200">
+                  {highlight}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -401,6 +545,8 @@ export default function TaskReportPopup({ report, agents, departments, uiLanguag
             </div>
           </div>
         </div>
+
+        {renderExecutionEvidence()}
 
         <div className="border-b border-slate-700/40 px-6 py-2.5">
           <div className="flex flex-wrap items-center gap-2">

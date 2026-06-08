@@ -70,4 +70,38 @@ describe("TaskReportPopup", () => {
 
     expect(screen.getByAltText("Ari")).toBeInTheDocument();
   });
+
+  it("shows sanitized execution evidence when remote run and artifact summary are present", () => {
+    const report = {
+      ...baseReport,
+      remote_runs: [
+        {
+          provider: "hermes",
+          remote_run_id: "run_123456789abcdef",
+          status: "completed",
+          base_url: "https://token@hermes.example.com/v1/runs?api_key=secret-value",
+          last_event: "run.completed",
+        },
+      ],
+      artifact_summary: {
+        artifact_count: 2,
+        document_count: 1,
+        verification_highlights: ["Artifact verified token=secret-value"],
+      },
+    };
+
+    render(
+      <I18nProvider language="en">
+        <TaskReportPopup report={report as any} agents={[]} departments={[]} uiLanguage="en" onClose={() => {}} />
+      </I18nProvider>,
+    );
+
+    expect(screen.getByText("Execution Evidence")).toBeInTheDocument();
+    expect(screen.getByText("hermes")).toBeInTheDocument();
+    expect(screen.getByText("https://hermes.example.com")).toBeInTheDocument();
+    expect(screen.getByText("2 artifacts")).toBeInTheDocument();
+    expect(screen.getByText("Artifact verified token=[redacted]")).toBeInTheDocument();
+    expect(screen.queryByText(/secret-value/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/api_key/)).not.toBeInTheDocument();
+  });
 });

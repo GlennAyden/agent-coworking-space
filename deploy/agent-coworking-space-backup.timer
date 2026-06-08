@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Agent Coworking Space runtime backup daily
+
+[Timer]
+OnCalendar=*-*-* 03:17:00
+Persistent=true
+Unit=agent-coworking-space-backup.service
+
+[Install]
+WantedBy=timers.target

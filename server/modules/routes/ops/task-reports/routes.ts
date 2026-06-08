@@ -12,6 +12,91 @@ export function registerTaskReportRoutes(ctx: RuntimeContext): void {
     buildTaskSection,
   } = createTaskReportHelpers({ db, nowMs });
 
+  function safeRemoteRunOrigin(value: unknown): string | null {
+    const raw = normalizeTaskText(value);
+    if (!raw) return null;
+    try {
+      const url = new URL(raw);
+      return `${url.protocol}//${url.host}`;
+    } catch {
+      return null;
+    }
+  }
+
+  function fetchRemoteRunsForTasks(taskIds: string[]): Array<Record<string, unknown>> {
+    const ids = [...new Set(taskIds.filter(Boolean))];
+    if (ids.length === 0) return [];
+    try {
+      const placeholders = ids.map(() => "?").join(",");
+      const rows = db
+        .prepare(
+          `
+      SELECT r.task_id, r.provider, r.remote_run_id, r.status, r.base_url,
+             r.last_event, r.error, r.created_at, r.updated_at,
+             COALESCE(t.title, '') AS task_title
+      FROM task_remote_runs r
+      LEFT JOIN tasks t ON t.id = r.task_id
+      WHERE r.task_id IN (${placeholders})
+      ORDER BY r.updated_at DESC
+    `,
+        )
+        .all(...ids) as Array<Record<string, unknown>>;
+
+      return rows.map((row) => {
+        const safeOrigin = safeRemoteRunOrigin(row.base_url);
+        return {
+          ...row,
+          base_url: safeOrigin,
+          base_url_origin: safeOrigin,
+        };
+      });
+    } catch {
+      return [];
+    }
+  }
+
+  function buildArtifactSummary(
+    teamReports: Array<Record<string, unknown>>,
+    remoteRuns: Array<Record<string, unknown>>,
+    rootLogs: Array<Record<string, unknown>>,
+  ): Record<string, unknown> {
+    const documents = teamReports.flatMap((section) =>
+      Array.isArray(section.documents) ? (section.documents as Array<Record<string, unknown>>) : [],
+    );
+    const fileArtifacts = documents.filter((doc) => {
+      const source = normalizeTaskText(doc.source);
+      const path = normalizeTaskText(doc.path);
+      return source === "file" || path.length > 0;
+    });
+    const reportMessageCount = teamReports.reduce((count, section) => {
+      const messages = Array.isArray(section.report_messages) ? section.report_messages : [];
+      return count + messages.length;
+    }, 0);
+    const allLogs = [
+      ...rootLogs,
+      ...teamReports.flatMap((section) => (Array.isArray(section.logs) ? section.logs : [])),
+    ] as Array<Record<string, unknown>>;
+    const verificationHighlights = allLogs
+      .map((log) => normalizeTaskText(log.message))
+      .filter((message) =>
+        /(artifact|verification|verified|remote run|hermes|deploy|build|test|health|passed|failed|completed)/i.test(
+          message,
+        ),
+      )
+      .slice(-8);
+
+    return {
+      artifact_count: fileArtifacts.length,
+      artifacts_count: fileArtifacts.length,
+      document_count: documents.length,
+      documents_count: documents.length,
+      report_message_count: reportMessageCount,
+      remote_run_count: remoteRuns.length,
+      verification_highlights: verificationHighlights,
+      log_highlights: verificationHighlights,
+    };
+  }
+
   app.get("/api/task-reports", (_req, res) => {
     try {
       const rows = db
@@ -171,6 +256,13 @@ export function registerTaskReportRoutes(ctx: RuntimeContext): void {
       const rootLogs = db
         .prepare("SELECT kind, message, created_at FROM task_logs WHERE task_id = ? ORDER BY created_at ASC")
         .all(rootTaskId);
+      const relatedTaskIds = relatedTasks.map((item) => String(item.id ?? "")).filter(Boolean);
+      const remoteRuns = fetchRemoteRunsForTasks(relatedTaskIds);
+      const artifactSummary = buildArtifactSummary(
+        teamReports as Array<Record<string, unknown>>,
+        remoteRuns,
+        rootLogs as Array<Record<string, unknown>>,
+      );
       const rootMinutes = fetchMeetingMinutesForTask(rootTaskId);
 
       const archiveRow = db
@@ -251,6 +343,8 @@ export function registerTaskReportRoutes(ctx: RuntimeContext): void {
         meeting_minutes: rootMinutes,
         planning_summary: planningSummary,
         team_reports: teamReports,
+        remote_runs: remoteRuns,
+        artifact_summary: artifactSummary,
       });
     } catch (err) {
       console.error("[task-reports/:id]", err);

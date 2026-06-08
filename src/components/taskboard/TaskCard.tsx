@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { RunTaskOptions } from "../../api";
 import type { Agent, Department, SubTask, Task, TaskStatus } from "../../types";
 import { useI18n } from "../../i18n";
 import AgentAvatar from "../AgentAvatar";
@@ -23,7 +24,7 @@ interface TaskCardProps {
   onUpdateTask: (id: string, data: Partial<Task>) => void;
   onDeleteTask: (id: string) => void;
   onAssignTask: (taskId: string, agentId: string) => void;
-  onRunTask: (id: string) => void;
+  onRunTask: (id: string, options?: RunTaskOptions) => void | Promise<void>;
   onStopTask: (id: string) => void;
   onPauseTask?: (id: string) => void;
   onResumeTask?: (id: string) => void;
@@ -41,6 +42,20 @@ const SUBTASK_STATUS_ICON: Record<string, string> = {
   done: "\u2705",
   blocked: "\uD83D\uDEAB",
 };
+
+function taskHasApprovalGate(task: Task): boolean {
+  if (task.status !== "pending") return false;
+  const meta = task.workflow_meta_json?.trim();
+  if (!meta) return false;
+  const normalized = meta.toLowerCase();
+  return (
+    normalized.includes("approval_required") ||
+    normalized.includes("approval required") ||
+    normalized.includes("approvalrequired") ||
+    normalized.includes("risky_action") ||
+    normalized.includes("risk_approval")
+  );
+}
 
 export default function TaskCard({
   task,
@@ -78,8 +93,9 @@ export default function TaskCard({
   const assignedLabel = assignedDisplayName || fallbackAssignedName || null;
   const department = departments.find((d) => d.id === task.department_id);
   const typeBadge = getTaskTypeBadge(task.task_type, t);
+  const approvalGateRequired = taskHasApprovalGate(task);
 
-  const canRun = task.status === "planned" || task.status === "inbox";
+  const canRun = task.status === "planned" || task.status === "inbox" || approvalGateRequired;
   const canStop = task.status === "in_progress";
   const canPause = task.status === "in_progress" && !!onPauseTask;
   const canResume = (task.status === "pending" || task.status === "cancelled") && !!onResumeTask;
@@ -120,6 +136,16 @@ export default function TaskCard({
         {isHiddenTask && (
           <span className="rounded-full bg-cyan-900/60 px-2 py-0.5 text-xs text-cyan-200">
             🙈 {t({ ko: "숨김", en: "Hidden", ja: "非表示", zh: "隐藏" })}
+          </span>
+        )}
+        {approvalGateRequired && (
+          <span className="rounded-full border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-200">
+            {t({
+              ko: "ìŠ¹ì¸ í•„ìš”",
+              en: "Approval required",
+              ja: "æ‰¿èªå¿…è¦",
+              zh: "需要批准",
+            })}
           </span>
         )}
         {department && (

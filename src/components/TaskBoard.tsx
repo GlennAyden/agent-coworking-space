@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
-import { bulkHideTasks } from "../api";
+import { bulkHideTasks, isApprovalRequiredError } from "../api";
+import type { ApprovalRequiredDetails, RunTaskOptions } from "../api";
 import { useI18n } from "../i18n";
 import type { Agent, Department, SubTask, Task, WorkflowPackKey } from "../types";
 import ProjectManagerModal from "./ProjectManagerModal";
@@ -28,7 +29,7 @@ interface TaskBoardProps {
   onUpdateTask: (id: string, data: Partial<Task>) => void;
   onDeleteTask: (id: string) => void;
   onAssignTask: (taskId: string, agentId: string) => void;
-  onRunTask: (id: string) => void;
+  onRunTask: (id: string, options?: RunTaskOptions) => void | Promise<void>;
   onStopTask: (id: string) => void;
   onPauseTask?: (id: string) => void;
   onResumeTask?: (id: string) => void;
@@ -67,6 +68,12 @@ export function TaskBoard({
   const [filterType, setFilterType] = useState("");
   const [search, setSearch] = useState("");
   const [showAllTasks, setShowAllTasks] = useState(false);
+  const [approvalRequest, setApprovalRequest] = useState<{
+    taskId: string;
+    taskTitle: string;
+    details: ApprovalRequiredDetails;
+  } | null>(null);
+  const [approvalBusy, setApprovalBusy] = useState(false);
 
   const hiddenTaskIds = useMemo(
     () => new Set(tasks.filter((task) => task.hidden === 1).map((task) => task.id)),
@@ -91,6 +98,45 @@ export function TaskBoard({
     if (statuses.length === 0) return;
     bulkHideTasks(statuses, 1);
   }, []);
+
+  const runTaskWithApprovalGate = useCallback(
+    async (taskId: string, options?: RunTaskOptions) => {
+      const task = tasks.find((entry) => entry.id === taskId);
+      try {
+        await onRunTask(taskId, options);
+      } catch (error) {
+        if (isApprovalRequiredError(error)) {
+          setApprovalRequest({
+            taskId,
+            taskTitle: task?.title ?? taskId,
+            details: error.details,
+          });
+          return;
+        }
+        throw error;
+      }
+    },
+    [onRunTask, tasks],
+  );
+
+  const approveAndRunTask = useCallback(async () => {
+    if (!approvalRequest || approvalBusy) return;
+    setApprovalBusy(true);
+    try {
+      await onRunTask(approvalRequest.taskId, { approval_confirmed: true });
+      setApprovalRequest(null);
+    } catch (error) {
+      if (isApprovalRequiredError(error)) {
+        setApprovalRequest((current) =>
+          current ? { ...current, details: error.details } : { ...approvalRequest, details: error.details },
+        );
+        return;
+      }
+      throw error;
+    } finally {
+      setApprovalBusy(false);
+    }
+  }, [approvalBusy, approvalRequest, onRunTask]);
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
@@ -274,7 +320,7 @@ export function TaskBoard({
                       onUpdateTask={onUpdateTask}
                       onDeleteTask={onDeleteTask}
                       onAssignTask={onAssignTask}
-                      onRunTask={onRunTask}
+                      onRunTask={runTaskWithApprovalGate}
                       onStopTask={onStopTask}
                       onPauseTask={onPauseTask}
                       onResumeTask={onResumeTask}
@@ -322,6 +368,86 @@ export function TaskBoard({
             setShowBulkHideModal(false);
           }}
         />
+      )}
+
+      {approvalRequest && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="approval-required-title"
+        >
+          <div className="w-full max-w-lg rounded-2xl border border-amber-500/30 bg-slate-900 shadow-2xl shadow-black/30">
+            <div className="border-b border-slate-700/60 px-5 py-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-amber-300">
+                {t({
+                  ko: "ì‹¤í–‰ ìŠ¹ì¸ í•„ìš”",
+                  en: "Approval required",
+                  ja: "å®Ÿè¡Œæ‰¿èªãŒå¿…è¦",
+                  zh: "éœ€è¦æ‰¹å‡†æ‰§è¡Œ",
+                })}
+              </p>
+              <h2 id="approval-required-title" className="mt-1 text-base font-semibold text-white">
+                {approvalRequest.taskTitle}
+              </h2>
+            </div>
+            <div className="space-y-4 px-5 py-4">
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
+                <p className="text-sm font-medium text-amber-100">
+                  {t({
+                    ko: "ì´ ìž‘ì—…ì€ production, data, deployment, ë˜ëŠ” repository ìƒíƒœì— ì˜í–¥ì„ ì¤„ ìˆ˜ ìžˆìŠµë‹ˆë‹¤.",
+                    en: "This task can affect production, data, deployment, or repository state.",
+                    ja: "ã“ã®ã‚¿ã‚¹ã‚¯ã¯ productionã€ãƒ‡ãƒ¼ã‚¿ã€ãƒ‡ãƒ—ãƒ­ã‚¤ã€ãƒªãƒã‚¸ãƒˆãƒªçŠ¶æ…‹ã«å½±éŸ¿ã™ã‚‹å¯èƒ½æ€§ãŒã‚ã‚Šã¾ã™ã€‚",
+                    zh: "此任务可能影响生产环境、数据、部署或仓库状态。",
+                  })}
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-amber-200/80">
+                  {t({
+                    ko: "ìŠ¹ì¸í•˜ë©´ ì´ ìœ„í—˜ì„ ì¸ì§€í•œ ìƒíƒœë¡œ ë‹¤ì‹œ ì‹¤í–‰í•©ë‹ˆë‹¤. ì‹¤í–‰ í›„ì—ëŠ” ì™¸ë¶€ ì‹œìŠ¤í…œ ë³€ê²½ì´ ë°œìƒí•  ìˆ˜ ìžˆìŠµë‹ˆë‹¤.",
+                    en: "Approving retries the run with explicit confirmation. External systems may change after execution starts.",
+                    ja: "æ‰¿èªã™ã‚‹ã¨æ˜Žç¤ºçš„ãªç¢ºèªä»˜ãã§å†å®Ÿè¡Œã—ã¾ã™ã€‚å®Ÿè¡Œé–‹å§‹å¾Œã«å¤–éƒ¨ã‚·ã‚¹ãƒ†ãƒ ãŒå¤‰æ›´ã•ã‚Œã‚‹å ´åˆãŒã‚ã‚Šã¾ã™ã€‚",
+                    zh: "批准后会带着明确确认重新运行。执行开始后，外部系统可能会发生变化。",
+                  })}
+                </p>
+              </div>
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  {t({ ko: "ìœ„í—˜ ì‚¬ìœ ", en: "Risk reasons", ja: "ãƒªã‚¹ã‚¯ç†ç”±", zh: "风险原因" })}
+                </p>
+                <ul className="space-y-1.5">
+                  {approvalRequest.details.reasons.map((reason, index) => (
+                    <li
+                      key={`${reason}-${index}`}
+                      className="rounded-lg border border-slate-700/70 bg-slate-800/70 px-3 py-2 text-xs leading-relaxed text-slate-200"
+                    >
+                      {reason}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-slate-700/60 px-5 py-4">
+              <button
+                type="button"
+                onClick={() => setApprovalRequest(null)}
+                disabled={approvalBusy}
+                className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {t({ ko: "ì·¨ì†Œ", en: "Cancel", ja: "ã‚­ãƒ£ãƒ³ã‚»ãƒ«", zh: "取消" })}
+              </button>
+              <button
+                type="button"
+                onClick={approveAndRunTask}
+                disabled={approvalBusy}
+                className="rounded-lg bg-amber-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-amber-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {approvalBusy
+                  ? t({ ko: "ì‹¤í–‰ ì¤‘...", en: "Running...", ja: "å®Ÿè¡Œä¸­...", zh: "运行中..." })
+                  : t({ ko: "ìŠ¹ì¸ í›„ ì‹¤í–‰", en: "Approve and Run", ja: "æ‰¿èªã—ã¦å®Ÿè¡Œ", zh: "批准并运行" })}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

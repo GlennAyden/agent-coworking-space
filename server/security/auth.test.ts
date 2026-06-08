@@ -85,9 +85,9 @@ describe("auth helpers", () => {
 
     expect(isPublicApiPath("/api/health")).toBe(true);
     expect(isPublicApiPath("/api/auth/session")).toBe(true);
-    expect(isPublicApiPath("/api/openapi.json")).toBe(true);
-    expect(isPublicApiPath("/api/docs")).toBe(true);
-    expect(isPublicApiPath("/api/docs/")).toBe(true);
+    expect(isPublicApiPath("/api/openapi.json")).toBe(false);
+    expect(isPublicApiPath("/api/docs")).toBe(false);
+    expect(isPublicApiPath("/api/docs/")).toBe(false);
     expect(isPublicApiPath("/api/tasks")).toBe(false);
 
     const insecureReq = mockRequest({
