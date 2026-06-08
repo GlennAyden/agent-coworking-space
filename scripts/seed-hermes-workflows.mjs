@@ -74,22 +74,37 @@ function findProject(projects, workflow) {
   return projects.find((project) => projectMatches(project, workflow)) ?? null;
 }
 
-function findHermesAgent(agents) {
+function listHermesAgents(agents) {
+  const hermesAgents = agents.filter((agent) => normalizeSearch(agent.cli_provider) === "hermes");
+  return hermesAgents
+    .filter((agent) => normalizeSearch(agent.status) !== "disabled")
+    .sort((a, b) => {
+      const rank = (agent) => {
+        const status = normalizeSearch(agent.status);
+        if (status === "idle") return 0;
+        if (status === "break") return 1;
+        if (status === "working") return 3;
+        return 2;
+      };
+      return rank(a) - rank(b);
+    });
+}
+
+function findExistingTask(tasks, workflow, project) {
+  const projectId = normalizeText(project.id);
+  const projectPath = normalizeText(project.project_path);
   return (
-    agents.find((agent) => normalizeSearch(agent.cli_provider) === "hermes" && normalizeSearch(agent.status) !== "disabled") ??
-    agents.find((agent) => normalizeSearch(agent.cli_provider) === "hermes") ??
-    null
+    tasks.find((task) => {
+      if (normalizeText(task.title) !== workflow.title) return false;
+      if (projectId && normalizeText(task.project_id) === projectId) return true;
+      return projectPath && normalizeText(task.project_path).toLowerCase() === projectPath.toLowerCase();
+    }) ?? null
   );
 }
 
-function hasExistingTask(tasks, workflow, project) {
-  const projectId = normalizeText(project.id);
-  const projectPath = normalizeText(project.project_path);
-  return tasks.some((task) => {
-    if (normalizeText(task.title) !== workflow.title) return false;
-    if (projectId && normalizeText(task.project_id) === projectId) return true;
-    return projectPath && normalizeText(task.project_path).toLowerCase() === projectPath.toLowerCase();
-  });
+function isRunnableSeedTask(task) {
+  const status = normalizeSearch(task.status);
+  return !["in_progress", "collaborating", "review", "done", "completed"].includes(status);
 }
 
 async function main() {
@@ -102,21 +117,36 @@ async function main() {
     client.get("/api/tasks"),
   ]);
 
-  const hermes = findHermesAgent(Array.isArray(agents) ? agents : []);
-  if (!hermes) {
+  const hermesAgents = listHermesAgents(Array.isArray(agents) ? agents : []);
+  if (hermesAgents.length === 0) {
     throw new Error("No Hermes agent found. Add or configure an agent with cli_provider=hermes first.");
   }
 
   const created = [];
   const skipped = [];
+  const runStarted = [];
+  let agentIndex = 0;
   for (const workflow of workflows) {
+    const hermes = hermesAgents[agentIndex % hermesAgents.length];
+    agentIndex += 1;
     const project = findProject(Array.isArray(projects) ? projects : [], workflow);
     if (!project?.project_path && !project?.id) {
       skipped.push(`${workflow.key}: project not found (set ${workflow.envPath} or add it to Office Manager)`);
       continue;
     }
-    if (hasExistingTask(Array.isArray(tasks) ? tasks : [], workflow, project)) {
+    const existingTask = findExistingTask(Array.isArray(tasks) ? tasks : [], workflow, project);
+    if (existingTask) {
       skipped.push(`${workflow.key}: existing task found`);
+      if (options.run && isRunnableSeedTask(existingTask)) {
+        if (normalizeText(existingTask.assigned_agent_id) !== normalizeText(hermes.id)) {
+          await client.patch(`/api/tasks/${existingTask.id}`, {
+            assigned_agent_id: hermes.id,
+            department_id: hermes.department_id ?? existingTask.department_id ?? null,
+          });
+        }
+        await client.post(`/api/tasks/${existingTask.id}/run`, {});
+        runStarted.push({ key: workflow.key, id: existingTask.id, existing: true });
+      }
       continue;
     }
 
@@ -140,6 +170,7 @@ async function main() {
     created.push({ key: workflow.key, id: result.id, title: workflow.title });
     if (options.run) {
       await client.post(`/api/tasks/${result.id}/run`, {});
+      runStarted.push({ key: workflow.key, id: result.id, existing: false });
     }
   }
 
@@ -147,9 +178,10 @@ async function main() {
     JSON.stringify(
       {
         ok: true,
-        hermes_agent_id: hermes.id,
+        hermes_agent_ids: hermesAgents.map((agent) => agent.id),
         created,
         skipped,
+        run_started: runStarted,
         run: options.run,
       },
       null,
@@ -206,6 +238,12 @@ async function createClient(baseUrlRaw) {
     post(path, payload) {
       return request(path, {
         method: "POST",
+        body: JSON.stringify(payload ?? {}),
+      });
+    },
+    patch(path, payload) {
+      return request(path, {
+        method: "PATCH",
         body: JSON.stringify(payload ?? {}),
       });
     },
