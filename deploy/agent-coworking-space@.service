@@ -7,17 +7,17 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=%i
-WorkingDirectory=%h/agent-coworking-space
-EnvironmentFile=-%h/agent-coworking-space/deploy/.env.production
-ExecStartPre=/usr/bin/env bash -lc 'mkdir -p %h/agent-coworking-space/logs'
-ExecStart=/usr/bin/env bash -lc 'cd %h/agent-coworking-space && pnpm run start:prod'
+WorkingDirectory=/home/%i/agent-coworking-space
+EnvironmentFile=-/home/%i/agent-coworking-space/deploy/.env.production
+ExecStartPre=/usr/bin/env bash -lc 'mkdir -p /home/%i/agent-coworking-space/logs'
+ExecStart=/usr/bin/env bash -lc 'cd /home/%i/agent-coworking-space && pnpm run start:prod'
 Restart=on-failure
 RestartSec=10
 KillMode=mixed
 KillSignal=SIGTERM
 TimeoutStopSec=30
-StandardOutput=append:%h/agent-coworking-space/logs/agent-coworking-space.log
-StandardError=append:%h/agent-coworking-space/logs/agent-coworking-space.err
+StandardOutput=append:/home/%i/agent-coworking-space/logs/agent-coworking-space.log
+StandardError=append:/home/%i/agent-coworking-space/logs/agent-coworking-space.err
 NoNewPrivileges=true
 PrivateTmp=true
 

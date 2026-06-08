@@ -4,8 +4,9 @@ Documentation=https://github.com/GlennAyden/agent-coworking-space
 
 [Service]
 Type=oneshot
-WorkingDirectory=%h/agent-coworking-space
-EnvironmentFile=-%h/agent-coworking-space/deploy/.env.production
-ExecStart=/usr/bin/env bash -lc 'cd %h/agent-coworking-space && pnpm run backup:runtime'
+User=ubuntu
+WorkingDirectory=/home/ubuntu/agent-coworking-space
+EnvironmentFile=-/home/ubuntu/agent-coworking-space/deploy/.env.production
+ExecStart=/usr/bin/env bash -lc 'cd /home/ubuntu/agent-coworking-space && pnpm run backup:runtime'
 NoNewPrivileges=true
 PrivateTmp=true
