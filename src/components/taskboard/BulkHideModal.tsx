@@ -54,12 +54,17 @@ export default function BulkHideModal({ tasks, hiddenTaskIds, onClose, onApply }
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black/60 p-4 backdrop-blur-sm"
       onClick={(event) => event.target === event.currentTarget && onClose()}
     >
-      <div className="w-full max-w-sm rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="bulk-hide-title"
+        className="max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto overscroll-contain rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl"
+      >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-bold text-white">
+          <h2 id="bulk-hide-title" className="text-base font-bold text-white">
             {t({
               ko: "숨길 상태 선택",
               en: "Select statuses to hide",

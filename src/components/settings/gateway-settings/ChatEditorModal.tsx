@@ -55,11 +55,16 @@ export default function ChatEditorModal({
     editor.channel === "discord" ? discordChannels.find((entry) => entry.id === editor.targetId.trim()) : null;
 
   return (
-    <div className="fixed inset-0 z-[2200] flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-[2200] flex items-center justify-center overflow-hidden p-4">
       <button className="absolute inset-0 bg-slate-950/70" onClick={closeEditorModal} aria-label="close modal" />
-      <div className="relative w-full max-w-lg rounded-xl border border-slate-700 bg-slate-900 p-4 shadow-2xl space-y-3">
-        <div className="flex items-center justify-between">
-          <h4 className="text-sm font-semibold text-slate-100">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="chat-editor-title"
+        className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl"
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-700 px-4 py-3">
+          <h4 id="chat-editor-title" className="text-sm font-semibold text-slate-100">
             {editor.mode === "create"
               ? t({ ko: "새 채팅 추가", en: "Add Chat", ja: "チャット追加", zh: "新增聊天" })
               : t({ ko: "채팅 편집", en: "Edit Chat", ja: "チャット編集", zh: "编辑聊天" })}
@@ -72,6 +77,7 @@ export default function ChatEditorModal({
           </button>
         </div>
 
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs text-slate-400 mb-1">
@@ -311,7 +317,9 @@ export default function ChatEditorModal({
 
         {editorError && <div className="text-xs text-red-400">{editorError}</div>}
 
-        <div className="flex justify-end gap-2 pt-1">
+        </div>
+
+        <div className="flex shrink-0 justify-end gap-2 border-t border-slate-700 px-4 py-3">
           <button
             onClick={closeEditorModal}
             className="px-3 py-1.5 text-xs rounded border border-slate-600 text-slate-300 hover:bg-slate-800"

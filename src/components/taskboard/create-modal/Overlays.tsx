@@ -42,14 +42,14 @@ export default function CreateTaskModalOverlays({
     <>
       {restorePromptOpen && selectedRestoreDraft && (
         <div
-          className="fixed inset-0 z-[58] flex items-center justify-center bg-black/65 p-4"
+          className="fixed inset-0 z-[58] flex items-start justify-center overflow-y-auto overscroll-contain bg-black/65 p-3 sm:items-center sm:p-4"
           onClick={onCloseRestorePrompt}
         >
           <div
-            className="w-full max-w-md overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl"
+            className="my-2 flex max-h-[calc(100dvh-1rem)] w-full max-w-md flex-col overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl sm:my-0 sm:max-h-[calc(100dvh-2rem)]"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="border-b border-slate-700 px-4 py-3">
+            <div className="shrink-0 border-b border-slate-700 px-4 py-3">
               <h3 className="text-sm font-semibold text-white">
                 {t({
                   ko: "임시 데이터 복구",
@@ -59,7 +59,7 @@ export default function CreateTaskModalOverlays({
                 })}
               </h3>
             </div>
-            <div className="space-y-2 px-4 py-4">
+            <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-4 py-4">
               <p className="text-sm text-slate-200">
                 {t({
                   ko: "기존에 입력하던 데이터가 있습니다. 불러오시겠습니까?",
@@ -107,7 +107,7 @@ export default function CreateTaskModalOverlays({
                 })}
               </div>
             </div>
-            <div className="flex justify-end gap-2 border-t border-slate-700 px-4 py-3">
+            <div className="flex shrink-0 justify-end gap-2 border-t border-slate-700 px-4 py-3">
               <button
                 type="button"
                 onClick={onCloseRestorePrompt}
@@ -129,14 +129,14 @@ export default function CreateTaskModalOverlays({
 
       {submitWithoutProjectPromptOpen && (
         <div
-          className="fixed inset-0 z-[59] flex items-center justify-center bg-black/70 p-4"
+          className="fixed inset-0 z-[59] flex items-start justify-center overflow-y-auto overscroll-contain bg-black/70 p-3 sm:items-center sm:p-4"
           onClick={onCloseSubmitWithoutProjectPrompt}
         >
           <div
-            className="w-full max-w-md overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl"
+            className="my-2 flex max-h-[calc(100dvh-1rem)] w-full max-w-md flex-col overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl sm:my-0 sm:max-h-[calc(100dvh-2rem)]"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="border-b border-slate-700 px-4 py-3">
+            <div className="shrink-0 border-b border-slate-700 px-4 py-3">
               <h3 className="text-sm font-semibold text-white">
                 {t({
                   ko: "프로젝트 연결 없이 생성",
@@ -146,7 +146,7 @@ export default function CreateTaskModalOverlays({
                 })}
               </h3>
             </div>
-            <div className="space-y-2 px-4 py-4">
+            <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-4 py-4">
               <p className="text-sm text-slate-200">
                 {t({
                   ko: "프로젝트 연결 없이 업무를 생성하시겠습니까?",
@@ -164,7 +164,7 @@ export default function CreateTaskModalOverlays({
                 })}
               </p>
             </div>
-            <div className="flex justify-end gap-2 border-t border-slate-700 px-4 py-3">
+            <div className="flex shrink-0 justify-end gap-2 border-t border-slate-700 px-4 py-3">
               <button
                 type="button"
                 onClick={onCloseSubmitWithoutProjectPrompt}
@@ -186,14 +186,14 @@ export default function CreateTaskModalOverlays({
 
       {missingPathPrompt && (
         <div
-          className="fixed inset-0 z-[59] flex items-center justify-center bg-black/70 p-4"
+          className="fixed inset-0 z-[59] flex items-start justify-center overflow-y-auto overscroll-contain bg-black/70 p-3 sm:items-center sm:p-4"
           onClick={onCloseMissingPathPrompt}
         >
           <div
-            className="w-full max-w-md overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl"
+            className="my-2 flex max-h-[calc(100dvh-1rem)] w-full max-w-md flex-col overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl sm:my-0 sm:max-h-[calc(100dvh-2rem)]"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="border-b border-slate-700 px-4 py-3">
+            <div className="shrink-0 border-b border-slate-700 px-4 py-3">
               <h3 className="text-sm font-semibold text-white">
                 {t({
                   ko: "프로젝트 경로 확인",
@@ -203,7 +203,7 @@ export default function CreateTaskModalOverlays({
                 })}
               </h3>
             </div>
-            <div className="space-y-2 px-4 py-4">
+            <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-4 py-4">
               <p className="text-sm text-slate-200">
                 {t({
                   ko: "해당 경로가 없습니다. 추가하시겠습니까?",
@@ -236,7 +236,7 @@ export default function CreateTaskModalOverlays({
                 </p>
               )}
             </div>
-            <div className="flex justify-end gap-2 border-t border-slate-700 px-4 py-3">
+            <div className="flex shrink-0 justify-end gap-2 border-t border-slate-700 px-4 py-3">
               <button
                 type="button"
                 onClick={onCloseMissingPathPrompt}
@@ -259,14 +259,14 @@ export default function CreateTaskModalOverlays({
 
       {manualPathPickerOpen && (
         <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4"
+          className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto overscroll-contain bg-black/70 p-3 sm:items-center sm:p-4"
           onClick={onCloseManualPathPicker}
         >
           <div
-            className="w-full max-w-2xl overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl"
+            className="my-2 flex max-h-[calc(100dvh-1rem)] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl sm:my-0 sm:max-h-[calc(100dvh-2rem)]"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-slate-700 px-4 py-3">
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-700 px-4 py-3">
               <h3 className="text-sm font-semibold text-white">
                 {t({
                   ko: "앱 내 폴더 탐색",
@@ -283,7 +283,7 @@ export default function CreateTaskModalOverlays({
                 ✕
               </button>
             </div>
-            <div className="space-y-3 px-4 py-4">
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4">
               <div className="rounded-lg border border-slate-700 bg-slate-800/70 px-3 py-2">
                 <p className="text-[11px] text-slate-400">
                   {t({ ko: "현재 위치", en: "Current Location", ja: "現在位置", zh: "当前位置" })}
@@ -354,7 +354,7 @@ export default function CreateTaskModalOverlays({
                 </p>
               )}
             </div>
-            <div className="flex justify-end gap-2 border-t border-slate-700 px-4 py-3">
+            <div className="flex shrink-0 justify-end gap-2 border-t border-slate-700 px-4 py-3">
               <button
                 type="button"
                 onClick={onCloseManualPathPicker}
@@ -382,14 +382,14 @@ export default function CreateTaskModalOverlays({
 
       {draftModalOpen && (
         <div
-          className="fixed inset-0 z-[61] flex items-center justify-center bg-black/70 p-4"
+          className="fixed inset-0 z-[61] flex items-start justify-center overflow-y-auto overscroll-contain bg-black/70 p-3 sm:items-center sm:p-4"
           onClick={onCloseDraftModal}
         >
           <div
-            className="w-full max-w-xl overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl"
+            className="my-2 flex max-h-[calc(100dvh-1rem)] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl sm:my-0 sm:max-h-[calc(100dvh-2rem)]"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-slate-700 px-4 py-3">
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-700 px-4 py-3">
               <h3 className="text-sm font-semibold text-white">
                 {t({ ko: "임시 저장 목록", en: "Temporary Drafts", ja: "一時保存一覧", zh: "临时草稿列表" })}
               </h3>
@@ -403,7 +403,7 @@ export default function CreateTaskModalOverlays({
               </button>
             </div>
 
-            <div className="max-h-[55dvh] space-y-2 overflow-y-auto px-4 py-3">
+            <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-4 py-3">
               {drafts.length === 0 ? (
                 <div className="rounded-lg border border-slate-700 bg-slate-800/70 px-3 py-4 text-center text-sm text-slate-400">
                   {t({
@@ -456,7 +456,7 @@ export default function CreateTaskModalOverlays({
               )}
             </div>
 
-            <div className="flex justify-end border-t border-slate-700 px-4 py-3">
+            <div className="flex shrink-0 justify-end border-t border-slate-700 px-4 py-3">
               <button
                 type="button"
                 onClick={onClearDrafts}

@@ -30,12 +30,15 @@ export default function ManualPathPickerDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto overscroll-contain bg-black/70 p-3 sm:items-center sm:p-4"
+      onClick={onClose}
+    >
       <div
-        className="w-full max-w-2xl overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl"
+        className="my-2 flex max-h-[calc(100dvh-1rem)] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl sm:my-0 sm:max-h-[calc(100dvh-2rem)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-700 px-4 py-3">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-700 px-4 py-3">
           <h3 className="text-sm font-semibold text-white">
             {t({
               ko: "앱 내 폴더 탐색",
@@ -52,7 +55,7 @@ export default function ManualPathPickerDialog({
             ✕
           </button>
         </div>
-        <div className="space-y-3 px-4 py-4">
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4">
           <div className="rounded-lg border border-slate-700 bg-slate-800/70 px-3 py-2">
             <p className="text-[11px] text-slate-400">
               {t({ ko: "현재 위치", en: "Current Location", ja: "現在位置", zh: "当前位置" })}
@@ -126,7 +129,7 @@ export default function ManualPathPickerDialog({
             </p>
           )}
         </div>
-        <div className="flex justify-end gap-2 border-t border-slate-700 px-4 py-3">
+        <div className="flex shrink-0 justify-end gap-2 border-t border-slate-700 px-4 py-3">
           <button
             type="button"
             onClick={onClose}

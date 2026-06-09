@@ -361,8 +361,12 @@ export default function AgentDetail({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-[calc(100vw-1.5rem)] max-w-[480px] max-h-[85vh] overflow-hidden rounded-2xl border border-slate-700 bg-slate-800 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/50 p-3 backdrop-blur-sm sm:items-center sm:p-4">
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="my-2 flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1.5rem)] max-w-[480px] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-800 shadow-2xl sm:my-0 sm:max-h-[calc(100dvh-2rem)]"
+      >
         <div
           className="relative px-6 py-5 border-b border-slate-700"
           style={{
@@ -722,7 +726,7 @@ export default function AgentDetail({
           </div>
         </div>
 
-        <div className="flex border-b border-slate-700">
+        <div className="flex shrink-0 border-b border-slate-700">
           {[
             { key: "info", label: t({ ko: "정보", en: "Info", ja: "情報", zh: "信息" }) },
             {
@@ -746,7 +750,7 @@ export default function AgentDetail({
           ))}
         </div>
 
-        <div className="p-4 overflow-y-auto max-h-[40vh]">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
           <AgentDetailTabContent
             tab={tab}
             t={t}

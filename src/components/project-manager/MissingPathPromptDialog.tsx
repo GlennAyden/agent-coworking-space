@@ -18,12 +18,15 @@ export default function MissingPathPromptDialog({
   if (!prompt) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4" onClick={onCancel}>
+    <div
+      className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto overscroll-contain bg-black/70 p-3 sm:items-center sm:p-4"
+      onClick={onCancel}
+    >
       <div
-        className="w-full max-w-lg overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl"
+        className="my-2 flex max-h-[calc(100dvh-1rem)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl sm:my-0 sm:max-h-[calc(100dvh-2rem)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="border-b border-slate-700 px-4 py-3">
+        <div className="shrink-0 border-b border-slate-700 px-4 py-3">
           <h3 className="text-sm font-semibold text-white">
             {t({
               ko: "프로젝트 경로 확인",
@@ -33,7 +36,7 @@ export default function MissingPathPromptDialog({
             })}
           </h3>
         </div>
-        <div className="space-y-2 px-4 py-4">
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-4 py-4">
           <p className="text-sm text-slate-200">
             {t({
               ko: "해당 경로가 없습니다. 추가하시겠습니까?",
@@ -66,7 +69,7 @@ export default function MissingPathPromptDialog({
             </p>
           )}
         </div>
-        <div className="flex justify-end gap-2 border-t border-slate-700 px-4 py-3">
+        <div className="flex shrink-0 justify-end gap-2 border-t border-slate-700 px-4 py-3">
           <button
             type="button"
             onClick={onCancel}

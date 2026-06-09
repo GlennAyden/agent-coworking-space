@@ -213,15 +213,18 @@ export default function DecisionInboxModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black/50 p-4 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="relative mx-4 w-full max-w-3xl rounded-2xl border border-indigo-500/30 bg-slate-900 shadow-2xl shadow-indigo-500/10"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="decision-inbox-title"
+        className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-indigo-500/30 bg-slate-900 shadow-2xl shadow-indigo-500/10"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-700/50 px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-700/50 px-6 py-4">
           <div className="flex items-center gap-3">
             <span className="text-2xl">🧭</span>
-            <h2 className="text-lg font-bold text-white">
+            <h2 id="decision-inbox-title" className="text-lg font-bold text-white">
               {t({ ko: "미결 의사결정", en: "Pending Decisions", ja: "未決の意思決定", zh: "待处理决策" })}
             </h2>
             <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-xs font-medium text-indigo-300">
@@ -244,7 +247,7 @@ export default function DecisionInboxModal({
           </div>
         </div>
 
-        <div className="max-h-[70vh] overflow-y-auto p-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
           {loading ? (
             <div className="py-12 text-center text-sm text-slate-500">
               {t({

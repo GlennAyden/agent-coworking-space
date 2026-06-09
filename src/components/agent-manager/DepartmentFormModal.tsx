@@ -201,14 +201,14 @@ export default function DepartmentFormModal({
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain p-3 sm:items-center sm:p-4"
       style={{ background: "var(--th-modal-overlay)" }}
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
     >
       <div
-        className="w-full max-w-lg rounded-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto"
+        className="my-2 max-h-[calc(100dvh-1rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl p-5 shadow-2xl animate-in fade-in zoom-in-95 duration-200 sm:my-0 sm:max-h-[calc(100dvh-2rem)] sm:p-6"
         style={{
           background: "var(--th-card-bg)",
           border: "1px solid var(--th-card-border)",

@@ -372,13 +372,13 @@ export function TaskBoard({
 
       {approvalRequest && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain bg-slate-950/70 p-3 backdrop-blur-sm sm:items-center sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="approval-required-title"
         >
-          <div className="w-full max-w-lg rounded-2xl border border-amber-500/30 bg-slate-900 shadow-2xl shadow-black/30">
-            <div className="border-b border-slate-700/60 px-5 py-4">
+          <div className="my-2 flex max-h-[calc(100dvh-1rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-amber-500/30 bg-slate-900 shadow-2xl shadow-black/30 sm:my-0 sm:max-h-[calc(100dvh-2rem)]">
+            <div className="shrink-0 border-b border-slate-700/60 px-5 py-4">
               <p className="text-xs font-semibold uppercase tracking-wider text-amber-300">
                 {t({
                   ko: "ì‹¤í–‰ ìŠ¹ì¸ í•„ìš”",
@@ -391,7 +391,7 @@ export function TaskBoard({
                 {approvalRequest.taskTitle}
               </h2>
             </div>
-            <div className="space-y-4 px-5 py-4">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 py-4">
               <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3">
                 <p className="text-sm font-medium text-amber-100">
                   {t({
@@ -426,7 +426,7 @@ export function TaskBoard({
                 </ul>
               </div>
             </div>
-            <div className="flex items-center justify-end gap-2 border-t border-slate-700/60 px-5 py-4">
+            <div className="flex shrink-0 items-center justify-end gap-2 border-t border-slate-700/60 px-5 py-4">
               <button
                 type="button"
                 onClick={() => setApprovalRequest(null)}

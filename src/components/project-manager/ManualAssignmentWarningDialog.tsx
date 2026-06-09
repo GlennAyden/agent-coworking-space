@@ -18,17 +18,20 @@ export default function ManualAssignmentWarningDialog({
   if (!warning) return null;
 
   return (
-    <div className="fixed inset-0 z-[61] flex items-center justify-center bg-black/70 p-4" onClick={onCancel}>
+    <div
+      className="fixed inset-0 z-[61] flex items-start justify-center overflow-y-auto overscroll-contain bg-black/70 p-3 sm:items-center sm:p-4"
+      onClick={onCancel}
+    >
       <div
-        className="w-full max-w-lg overflow-hidden rounded-xl border border-amber-500/40 bg-slate-900 shadow-2xl"
+        className="my-2 flex max-h-[calc(100dvh-1rem)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-amber-500/40 bg-slate-900 shadow-2xl sm:my-0 sm:max-h-[calc(100dvh-2rem)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="border-b border-amber-500/30 px-4 py-3">
+        <div className="shrink-0 border-b border-amber-500/30 px-4 py-3">
           <h3 className="text-sm font-semibold text-amber-200">
             {t({ ko: "수동 배정 확인", en: "Manual Assignment Check", ja: "手動割り当て確認", zh: "手动分配确认" })}
           </h3>
         </div>
-        <div className="space-y-2 px-4 py-4">
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-4 py-4">
           <p className="text-sm text-slate-100">
             {warning.reason === "no_agents"
               ? t({
@@ -54,7 +57,7 @@ export default function ManualAssignmentWarningDialog({
             </p>
           </div>
         </div>
-        <div className="flex justify-end gap-2 border-t border-slate-700 px-4 py-3">
+        <div className="flex shrink-0 justify-end gap-2 border-t border-slate-700 px-4 py-3">
           <button
             type="button"
             onClick={onCancel}

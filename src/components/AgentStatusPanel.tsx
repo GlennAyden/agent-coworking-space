@@ -150,18 +150,21 @@ export default function AgentStatusPanel({ agents, uiLanguage, onClose }: AgentS
       : cliProcesses.filter((proc) => proc.provider !== "node" && proc.provider !== "python");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black/50 p-4 backdrop-blur-sm" onClick={onClose}>
       <div
-        className={`relative mx-4 w-full rounded-2xl border border-blue-500/30 bg-slate-900 shadow-2xl shadow-blue-500/10 ${
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="active-agents-title"
+        className={`relative flex max-h-[calc(100dvh-2rem)] w-full flex-col overflow-hidden rounded-2xl border border-blue-500/30 bg-slate-900 shadow-2xl shadow-blue-500/10 ${
           inspectorMode ? "max-w-3xl" : "max-w-lg"
         }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-700/50 px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-700/50 px-6 py-4">
           <div className="flex items-center gap-3">
             <span className="text-2xl">&#x1F6E0;</span>
-            <h2 className="text-lg font-bold text-white">
+            <h2 id="active-agents-title" className="text-lg font-bold text-white">
               {t({ ko: "활성 에이전트", en: "Active Agents", ja: "アクティブエージェント", zh: "活跃代理" })}
             </h2>
             <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-xs font-medium text-blue-400">
@@ -223,7 +226,7 @@ export default function AgentStatusPanel({ agents, uiLanguage, onClose }: AgentS
         </div>
 
         {/* Content */}
-        <div className="max-h-[70vh] overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {inspectorMode && (
             <div className="border-b border-slate-700/50 bg-slate-950/40 px-4 py-3">
               <div className="mb-2 flex items-center justify-between">
