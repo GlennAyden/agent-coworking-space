@@ -219,7 +219,7 @@ export default function TaskReportPopup({ report, agents, departments, uiLanguag
                     : t({ ko: "확장", en: "Expand", ja: "展開", zh: "展开" })}
                 </button>
               </div>
-              <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2 text-[11px] leading-relaxed text-slate-300">
+              <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words rounded bg-black/30 p-2 text-[11px] leading-relaxed text-slate-300 [overflow-wrap:anywhere]">
                 {isExpanded ? doc.content : doc.text_preview}
               </pre>
             </div>
@@ -276,7 +276,7 @@ export default function TaskReportPopup({ report, agents, departments, uiLanguag
     if (remoteRuns.length === 0 && !artifactSummary) return null;
 
     return (
-      <div className="border-b border-slate-700/40 px-6 py-3">
+      <div className="shrink-0 border-b border-slate-700/40 px-6 py-3">
         <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-3">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div>
@@ -324,16 +324,16 @@ export default function TaskReportPopup({ report, agents, departments, uiLanguag
                     <p>
                       <span className="text-slate-500">run</span> {shortId(run.remote_run_id)}
                     </p>
-                    <p>
+                    <p className="break-words [overflow-wrap:anywhere]">
                       <span className="text-slate-500">origin</span> {safeOrigin(run.base_url)}
                     </p>
                     {run.last_event && (
-                      <p>
+                      <p className="break-words [overflow-wrap:anywhere]">
                         <span className="text-slate-500">event</span> {maskSensitiveText(run.last_event)}
                       </p>
                     )}
                     {run.error && (
-                      <p className="text-rose-300">
+                      <p className="break-words text-rose-300 [overflow-wrap:anywhere]">
                         <span className="text-rose-400/70">error</span> {maskSensitiveText(run.error)}
                       </p>
                     )}
@@ -346,7 +346,10 @@ export default function TaskReportPopup({ report, agents, departments, uiLanguag
           {highlights.length > 0 && (
             <div className="mt-3 space-y-1.5">
               {highlights.map((highlight, index) => (
-                <div key={`${highlight}-${index}`} className="rounded bg-slate-950/35 px-2 py-1.5 text-[11px] text-slate-200">
+                <div
+                  key={`${highlight}-${index}`}
+                  className="break-words rounded bg-slate-950/35 px-2 py-1.5 text-[11px] text-slate-200 [overflow-wrap:anywhere]"
+                >
                   {highlight}
                 </div>
               ))}
@@ -386,7 +389,7 @@ export default function TaskReportPopup({ report, agents, departments, uiLanguag
             <span className="text-[11px] text-emerald-400">{fmtTime(planningSummary?.generated_at)}</span>
           </div>
         </div>
-        <pre className="max-h-[60vh] overflow-auto whitespace-pre-wrap text-xs leading-relaxed text-emerald-100">
+        <pre className="max-h-[46vh] overflow-auto whitespace-pre-wrap break-words text-xs leading-relaxed text-emerald-100 [overflow-wrap:anywhere]">
           {planningSummary?.content ||
             t({ ko: "요약 내용이 없습니다", en: "No summary text", ja: "サマリーなし", zh: "暂无摘要内容" })}
         </pre>
@@ -405,7 +408,7 @@ export default function TaskReportPopup({ report, agents, departments, uiLanguag
             {branchVerificationLogs.map((log, index) => (
               <div
                 key={`${log.created_at}-${index}`}
-                className="rounded bg-slate-950/40 px-2 py-1.5 text-[11px] text-slate-200"
+                className="break-words rounded bg-slate-950/40 px-2 py-1.5 text-[11px] text-slate-200 [overflow-wrap:anywhere]"
               >
                 <span className="mr-2 text-slate-500">{fmtTime(log.created_at)}</span>
                 {log.message}
@@ -446,7 +449,7 @@ export default function TaskReportPopup({ report, agents, departments, uiLanguag
           <p className="mt-1 text-xs text-slate-500">
             {t({ ko: "완료", en: "Completed", ja: "完了", zh: "完成" })}: {fmtTime(team.completed_at)}
           </p>
-          <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-slate-300">{team.summary || "-"}</p>
+          <p className="mt-2 whitespace-pre-wrap break-words text-xs leading-relaxed text-slate-300 [overflow-wrap:anywhere]">{team.summary || "-"}</p>
         </div>
 
         {team.linked_subtasks.length > 0 && (
@@ -482,7 +485,7 @@ export default function TaskReportPopup({ report, agents, departments, uiLanguag
             </p>
             <div className="space-y-1">
               {keyLogs.map((lg, idx) => (
-                <div key={`${lg.created_at}-${idx}`} className="text-[11px] text-slate-400">
+                <div key={`${lg.created_at}-${idx}`} className="break-words text-[11px] text-slate-400 [overflow-wrap:anywhere]">
                   <span className="mr-2 text-slate-500">{fmtTime(lg.created_at)}</span>
                   {lg.message}
                 </div>
@@ -495,16 +498,19 @@ export default function TaskReportPopup({ report, agents, departments, uiLanguag
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black/50 p-4 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="relative mx-4 w-full max-w-4xl rounded-2xl border border-emerald-500/30 bg-slate-900 shadow-2xl shadow-emerald-500/10"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="task-report-title"
+        className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-emerald-500/30 bg-slate-900 shadow-2xl shadow-emerald-500/10"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-700/50 px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-700/50 px-6 py-4">
           <div className="min-w-0">
             <div className="mb-1 flex items-center gap-2">
               <span className="text-xl">&#x1F4CB;</span>
-              <h2 className="truncate text-lg font-bold text-white">
+              <h2 id="task-report-title" className="truncate text-lg font-bold text-white">
                 {t({
                   ko: "작업 완료 보고서",
                   en: "Task Completion Report",
@@ -524,7 +530,7 @@ export default function TaskReportPopup({ report, agents, departments, uiLanguag
           </button>
         </div>
 
-        <div className="border-b border-slate-700/40 px-6 py-3">
+        <div className="shrink-0 border-b border-slate-700/40 px-6 py-3">
           <div className="flex items-start gap-3">
             <AgentAvatar agent={taskAgent} agents={agents} size={40} rounded="xl" />
             <div className="min-w-0 flex-1">
@@ -548,7 +554,7 @@ export default function TaskReportPopup({ report, agents, departments, uiLanguag
 
         {renderExecutionEvidence()}
 
-        <div className="border-b border-slate-700/40 px-6 py-2.5">
+        <div className="shrink-0 border-b border-slate-700/40 px-6 py-2.5">
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setActiveTab("planning")}
@@ -580,7 +586,7 @@ export default function TaskReportPopup({ report, agents, departments, uiLanguag
           </div>
         </div>
 
-        <div className="max-h-[68vh] overflow-y-auto px-6 py-4">
+        <div data-testid="task-report-scroll-region" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4">
           {activeTab === "planning" ? (
             renderPlanningSummary()
           ) : selectedTeam ? (
@@ -597,7 +603,7 @@ export default function TaskReportPopup({ report, agents, departments, uiLanguag
           )}
         </div>
 
-        <div className="border-t border-slate-700/50 px-6 py-3">
+        <div className="shrink-0 border-t border-slate-700/50 px-6 py-3">
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-500">
               {t({

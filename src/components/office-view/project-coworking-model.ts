@@ -140,6 +140,22 @@ export function deriveProjectCoworkingSummary({
   };
 }
 
+export function getProjectRoomContextTasks(room: ProjectRoomSummary, tasks: Task[], max = 3): Task[] {
+  const roomTaskIds = new Set(room.taskIds);
+  const activeTaskIds = new Set(room.activeTaskIds);
+  return tasks
+    .filter((task) => roomTaskIds.has(task.id))
+    .sort((a, b) => compareContextTasks(a, b, activeTaskIds))
+    .slice(0, max);
+}
+
+export function getDepartmentContextTasks(departmentId: string | null, tasks: Task[], max = 3): Task[] {
+  return tasks
+    .filter((task) => (departmentId ? task.department_id === departmentId : !task.department_id))
+    .sort((a, b) => compareContextTasks(a, b))
+    .slice(0, max);
+}
+
 function findLatestAssignedProjectTask(
   agent: Agent,
   tasks: Task[],
@@ -202,6 +218,25 @@ function isLiveTask(task: Task): boolean {
 
 function taskSortTime(task: Task): number {
   return task.updated_at ?? task.started_at ?? task.created_at ?? 0;
+}
+
+function compareContextTasks(a: Task, b: Task, activeTaskIds = new Set<string>()): number {
+  const activeDelta = Number(activeTaskIds.has(b.id)) - Number(activeTaskIds.has(a.id));
+  if (activeDelta !== 0) return activeDelta;
+  const statusDelta = contextStatusRank(a.status) - contextStatusRank(b.status);
+  if (statusDelta !== 0) return statusDelta;
+  const terminalDelta = Number(TERMINAL_TASK_STATUSES.has(a.status)) - Number(TERMINAL_TASK_STATUSES.has(b.status));
+  if (terminalDelta !== 0) return terminalDelta;
+  return taskSortTime(b) - taskSortTime(a);
+}
+
+function contextStatusRank(status: Task["status"]): number {
+  if (status === "in_progress") return 0;
+  if (status === "pending") return 1;
+  if (status === "planned" || status === "inbox") return 2;
+  if (status === "review") return 3;
+  if (status === "done") return 4;
+  return 5;
 }
 
 function normalizePath(projectPath?: string | null): string {

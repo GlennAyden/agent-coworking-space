@@ -33,6 +33,8 @@ import { renderDeskAgentAndSubClones } from "./buildScene-department-agent";
 import {
   type DepartmentCommonsSummary,
   type ProjectRoomSummary,
+  getDepartmentContextTasks,
+  getProjectRoomContextTasks,
 } from "./project-coworking-model";
 import {
   createProjectCoworkingLayout,
@@ -207,7 +209,6 @@ export function buildProjectCoworkingRooms({
     coworkingSelection ?? null,
     tasks,
     agentById,
-    taskById,
     activeLocale,
     isDark,
     cbRef,
@@ -843,7 +844,6 @@ function drawCoworkingContextPanel(
   selection: CoworkingSelection | null,
   tasks: Task[],
   agentById: Map<string, Agent>,
-  taskById: Map<string, Task>,
   activeLocale: SupportedLocale,
   isDark: boolean,
   cbRef: MutableRefObject<CallbackSnapshot>,
@@ -862,7 +862,7 @@ function drawCoworkingContextPanel(
   const anchorRect = projectRects.get(selection.key);
   if (!room || !anchorRect) return;
 
-  const rect = getFloatingPanelRect(anchorRect, layout);
+  const rect = getFloatingPanelRect(anchorRect, layout, 620, 172);
   const theme = projectTheme(room.key, hashStr(`${room.key}:panel`), isDark);
   const panel = new Container();
   panel.eventMode = "static";
@@ -879,7 +879,7 @@ function drawCoworkingContextPanel(
   drawPanelPointer(panel, anchorRect, rect, theme.accent, isDark);
   drawPanelClose(panel, rect, theme.accent, cbRef);
 
-  const preview = { x: rect.x + 12, y: rect.y + 14, w: 142, h: rect.h - 28 };
+  const preview = { x: rect.x + 12, y: rect.y + 14, w: 132, h: rect.h - 28 };
   drawTiledFloor(bg, preview.x, preview.y, preview.w, preview.h, theme.floor1, theme.floor2);
   bg.roundRect(preview.x, preview.y, preview.w, preview.h, 4).stroke({ width: 1.8, color: theme.wall, alpha: 0.9 });
   drawWhiteboard(panel, preview.x + preview.w - 42, preview.y + 14);
@@ -895,7 +895,7 @@ function drawCoworkingContextPanel(
     panel.addChild(dot);
   });
 
-  const titleX = rect.x + 174;
+  const titleX = rect.x + 162;
   const status = room.activeTaskIds.length > 0 ? "RUNNING" : room.taskIds.length > 0 ? "IN REVIEW" : "READY";
   const title = new Text({
     text: truncate(room.name.toUpperCase(), 26),
@@ -911,30 +911,20 @@ function drawCoworkingContextPanel(
   drawStatusPill(panel, titleX, rect.y + 42, status, theme.accent);
 
   const pathText = new Text({
-    text: truncate(room.projectPath ?? "No project path", 44),
+    text: truncate(room.projectPath ?? "No project path", 52),
     style: new TextStyle({ fontSize: 7, fill: isDark ? 0xd6cabb : 0x6b5a49, fontFamily: "monospace" }),
   });
   pathText.position.set(titleX, rect.y + 61);
   panel.addChild(pathText);
 
-  const currentTask = room.activeTaskIds.map((taskId) => taskById.get(taskId)).find(Boolean) ?? room.taskIds.map((taskId) => taskById.get(taskId)).find(Boolean);
-  if (rect.w < 760) {
-    const compactTask = new Text({
-      text: truncate(currentTask?.title ?? "Waiting for assignment", 34),
-      style: new TextStyle({
-        fontSize: 7,
-        fill: isDark ? 0xe9dcc8 : 0x473b30,
-        fontFamily: "system-ui, sans-serif",
-      }),
-    });
-    compactTask.position.set(titleX, rect.y + 82);
-    panel.addChild(compactTask);
-    stage.addChild(panel);
-    return;
-  }
-
-  drawInfoBlock(panel, titleX, rect.y + 74, 190, "CURRENT TASK", currentTask?.title ?? "Waiting for assignment");
-  drawAssignedAgents(panel, rect.x + rect.w - 164, rect.y + 18, room.agentIds, agentById, activeLocale, theme.accent);
+  const contextTasks = getProjectRoomContextTasks(room, tasks, 3);
+  const contentY = rect.y + 78;
+  const contentW = Math.max(330, rect.x + rect.w - titleX - 18);
+  const taskBlockW = Math.min(224, Math.max(176, Math.floor(contentW * 0.54)));
+  const agentBlockX = titleX + taskBlockW + 12;
+  const agentBlockW = Math.max(140, rect.x + rect.w - agentBlockX - 18);
+  drawTaskListBlock(panel, titleX, contentY, taskBlockW, "REQUESTED TASKS", contextTasks);
+  drawAgentListBlock(panel, agentBlockX, contentY, agentBlockW, "AGENTS IN ROOM", room.agentIds, agentById, activeLocale, theme.accent);
 
   stage.addChild(panel);
 }
@@ -960,7 +950,7 @@ function drawDepartmentContextPanel(
     wall: isDark ? blendColor(baseTheme.wall, 0xffffff, 0.18) : baseTheme.wall,
     accent: baseTheme.accent,
   };
-  const rect = getFloatingPanelRect(anchorRect, layout, 470, 136);
+  const rect = getFloatingPanelRect(anchorRect, layout, 560, 164);
   const panel = new Container();
   panel.eventMode = "static";
   const bg = new Graphics();
@@ -998,17 +988,14 @@ function drawDepartmentContextPanel(
   panel.addChild(title);
   drawStatusPill(panel, titleX, rect.y + 42, "COMMONS", theme.accent);
 
-  const deptTasks = tasks.filter((task) => task.department_id === commons.departmentId);
-  const activeDeptTasks = deptTasks.filter((task) => task.status !== "done" && task.status !== "cancelled");
-  drawInfoBlock(
-    panel,
-    titleX,
-    rect.y + 64,
-    170,
-    "ROOM STATUS",
-    `${commons.agentIds.length} agents, ${activeDeptTasks.length} active tasks`,
-  );
-  drawAssignedAgents(panel, rect.x + rect.w - 164, rect.y + 18, commons.agentIds, agentById, activeLocale, theme.accent);
+  const contextTasks = getDepartmentContextTasks(commons.departmentId, tasks, 3);
+  const contentY = rect.y + 66;
+  const contentW = Math.max(320, rect.x + rect.w - titleX - 18);
+  const taskBlockW = Math.min(212, Math.max(172, Math.floor(contentW * 0.54)));
+  const agentBlockX = titleX + taskBlockW + 12;
+  const agentBlockW = Math.max(136, rect.x + rect.w - agentBlockX - 18);
+  drawTaskListBlock(panel, titleX, contentY, taskBlockW, "DEPARTMENT TASKS", contextTasks);
+  drawAgentListBlock(panel, agentBlockX, contentY, agentBlockW, "AGENTS HERE", commons.agentIds, agentById, activeLocale, theme.accent);
 
   stage.addChild(panel);
 }
@@ -1095,6 +1082,124 @@ function drawInfoBlock(panel: Container, x: number, y: number, w: number, label:
   });
   body.position.set(x + 7, y + 22);
   panel.addChild(body);
+}
+
+function drawTaskListBlock(panel: Container, x: number, y: number, w: number, label: string, tasks: Task[]): void {
+  drawPanelBlock(panel, x, y, w, 76, label);
+  if (tasks.length === 0) {
+    drawPanelEmptyText(panel, x + 8, y + 26, "No requested task");
+    return;
+  }
+  tasks.slice(0, 3).forEach((task, index) => {
+    const rowY = y + 18 + index * 18;
+    const rowBg = new Graphics();
+    rowBg.roundRect(x + 6, rowY, w - 12, 15, 3).fill({ color: 0xffffff, alpha: index === 0 ? 0.58 : 0.36 });
+    panel.addChild(rowBg);
+    const title = new Text({
+      text: truncate(task.title, Math.max(16, Math.floor((w - 54) / 4.1))),
+      style: new TextStyle({ fontSize: 6.6, fill: 0x473b30, fontWeight: index === 0 ? "bold" : "normal", fontFamily: "system-ui, sans-serif" }),
+    });
+    title.position.set(x + 11, rowY + 4);
+    panel.addChild(title);
+
+    const status = new Text({
+      text: compactStatus(task.status),
+      style: new TextStyle({ fontSize: 5.4, fill: 0xffffff, fontWeight: "bold", fontFamily: "system-ui, sans-serif" }),
+    });
+    const pillW = Math.min(42, status.width + 8);
+    const pill = new Graphics();
+    pill.roundRect(x + w - pillW - 10, rowY + 3, pillW, 9, 3).fill({ color: statusColor(task.status), alpha: 0.92 });
+    panel.addChild(pill);
+    status.anchor.set(0.5, 0.5);
+    status.position.set(x + w - pillW / 2 - 10, rowY + 7.5);
+    panel.addChild(status);
+  });
+}
+
+function drawAgentListBlock(
+  panel: Container,
+  x: number,
+  y: number,
+  w: number,
+  label: string,
+  agentIds: string[],
+  agentById: Map<string, Agent>,
+  activeLocale: SupportedLocale,
+  accent: number,
+): void {
+  drawPanelBlock(panel, x, y, w, 76, `${label} (${agentIds.length})`);
+  if (agentIds.length === 0) {
+    drawPanelEmptyText(panel, x + 8, y + 26, "No agent in room");
+    return;
+  }
+  agentIds.slice(0, 3).forEach((agentId, index) => {
+    const agent = agentById.get(agentId);
+    const rowY = y + 18 + index * 18;
+    const dot = new Graphics();
+    dot.circle(x + 16, rowY + 7.5, 5.5).fill({ color: blendColor(accent, 0xffffff, 0.12), alpha: 1 });
+    dot.circle(x + 16, rowY + 7.5, 5.5).stroke({ width: 0.8, color: accent, alpha: 0.72 });
+    panel.addChild(dot);
+
+    const name = new Text({
+      text: truncate(agent ? localeName(activeLocale, agent) : agentId, Math.max(9, Math.floor((w - 46) / 4.4))),
+      style: new TextStyle({ fontSize: 6.6, fill: 0x3f352d, fontWeight: "bold", fontFamily: "system-ui, sans-serif" }),
+    });
+    name.position.set(x + 27, rowY + 2);
+    panel.addChild(name);
+
+    const status = new Text({
+      text: truncate(agent?.status ?? "unknown", 10),
+      style: new TextStyle({ fontSize: 5.4, fill: 0x75634f, fontFamily: "monospace" }),
+    });
+    status.position.set(x + 27, rowY + 10);
+    panel.addChild(status);
+  });
+  if (agentIds.length > 3) {
+    const more = new Text({
+      text: `+${agentIds.length - 3}`,
+      style: new TextStyle({ fontSize: 6, fill: 0x75634f, fontWeight: "bold", fontFamily: "monospace" }),
+    });
+    more.anchor.set(1, 0.5);
+    more.position.set(x + w - 10, y + 67);
+    panel.addChild(more);
+  }
+}
+
+function drawPanelBlock(panel: Container, x: number, y: number, w: number, h: number, label: string): void {
+  const heading = new Text({
+    text: label,
+    style: new TextStyle({ fontSize: 6.5, fill: 0x75634f, fontWeight: "bold", fontFamily: "monospace" }),
+  });
+  heading.position.set(x, y);
+  panel.addChild(heading);
+  const bg = new Graphics();
+  bg.roundRect(x, y + 13, w, h - 13, 4).fill({ color: 0xfffbf2, alpha: 0.84 });
+  bg.roundRect(x, y + 13, w, h - 13, 4).stroke({ width: 0.8, color: 0xd2b98f, alpha: 0.55 });
+  panel.addChild(bg);
+}
+
+function drawPanelEmptyText(panel: Container, x: number, y: number, text: string): void {
+  const empty = new Text({
+    text,
+    style: new TextStyle({ fontSize: 7, fill: 0x7a6b58, fontFamily: "system-ui, sans-serif" }),
+  });
+  empty.position.set(x, y);
+  panel.addChild(empty);
+}
+
+function compactStatus(status: Task["status"]): string {
+  if (status === "in_progress") return "RUN";
+  if (status === "planned") return "PLAN";
+  if (status === "pending") return "WAIT";
+  return status.toUpperCase().slice(0, 6);
+}
+
+function statusColor(status: Task["status"]): number {
+  if (status === "done") return 0x3c8b5b;
+  if (status === "review") return 0x4f78b8;
+  if (status === "in_progress") return 0xd19332;
+  if (status === "cancelled") return 0x79808a;
+  return 0x8b6f3e;
 }
 
 function drawAssignedAgents(

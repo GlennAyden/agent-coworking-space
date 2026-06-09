@@ -59,6 +59,8 @@ describe("TaskReportPopup", () => {
 
     expect(screen.getByText("Final Branch Verification")).toBeInTheDocument();
     expect(screen.getByText(/Final branch verification: passed/)).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Task Completion Report" })).toHaveClass("max-h-[calc(100dvh-2rem)]");
+    expect(screen.getByTestId("task-report-scroll-region")).toHaveClass("overflow-y-auto");
   });
 
   it("keeps a sprite avatar when the assigned agent is missing from the active agent list", () => {

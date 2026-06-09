@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Agent, Department, Project, Task } from "../../types";
 import { BREAK_ROOM_H } from "./office-layout-constants";
 import { PROJECT_COWORKING_MIN_W, createProjectCoworkingLayout, getFloatingPanelRect } from "./project-coworking-layout";
-import { deriveProjectCoworkingSummary } from "./project-coworking-model";
+import { deriveProjectCoworkingSummary, getDepartmentContextTasks, getProjectRoomContextTasks } from "./project-coworking-model";
 
 function makeDepartment(overrides: Partial<Department> = {}): Department {
   return {
@@ -294,5 +294,54 @@ describe("project coworking office model", () => {
       expect(panel.x + panel.w).toBeLessThanOrEqual(layout.officeW - 12);
       expect(panel.y + panel.h).toBeLessThanOrEqual(layout.totalH - 12);
     }
+  });
+
+  it("selects active project room tasks before older completed work for the floating panel", () => {
+    const tasks = [
+      makeTask({
+        id: "task-done",
+        title: "Completed archive cleanup",
+        project_id: "project-1",
+        status: "done",
+        updated_at: 100,
+      }),
+      makeTask({
+        id: "task-requested",
+        title: "Requested live smoke check",
+        project_id: "project-1",
+        status: "in_progress",
+        updated_at: 50,
+      }),
+      makeTask({
+        id: "task-planned",
+        title: "Next review pass",
+        project_id: "project-1",
+        status: "planned",
+        updated_at: 80,
+      }),
+    ];
+    const summary = deriveProjectCoworkingSummary({
+      projects: [makeProject()],
+      tasks,
+      agents: [makeAgent({ current_task_id: "task-requested", status: "working" })],
+      departments: [makeDepartment()],
+    });
+
+    const panelTasks = getProjectRoomContextTasks(summary.projectRooms[0], tasks);
+
+    expect(panelTasks.map((task) => task.id)).toEqual(["task-requested", "task-planned", "task-done"]);
+    expect(summary.projectRooms[0].agentIds).toEqual(["agent-1"]);
+  });
+
+  it("selects department room tasks with unfinished requests first", () => {
+    const tasks = [
+      makeTask({ id: "qa-done", department_id: "qa", status: "done", updated_at: 200 }),
+      makeTask({ id: "qa-active", department_id: "qa", status: "pending", updated_at: 100 }),
+      makeTask({ id: "dev-active", department_id: "dev", status: "in_progress", updated_at: 300 }),
+    ];
+
+    const panelTasks = getDepartmentContextTasks("qa", tasks);
+
+    expect(panelTasks.map((task) => task.id)).toEqual(["qa-active", "qa-done"]);
   });
 });
